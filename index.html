@@ -130,6 +130,9 @@
   .mini{display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-start}
   .mini .dp{width:31px;height:25px;overflow:hidden;display:grid;place-items:center;border-radius:6px;
     background:rgba(58,46,40,.05)}
+  .mini.roomy{gap:5px}
+  .mini.roomy .dp{width:46px;height:46px;border-radius:8px}
+  .mini.roomy .piece{gap:1.5px}
   .mini .dp.soon{background:rgba(240,184,64,.22);box-shadow:inset 0 0 0 1px rgba(240,184,64,.6)}
   .mini .dp.closer{background:rgba(58,46,40,.16)}
   .mini .dp.power{background:rgba(243,198,75,.35);box-shadow:inset 0 0 0 1px #F3C64B}
@@ -215,6 +218,8 @@
   .lb .rk{color:var(--dim);width:22px;flex:none}
   .lb .ico,.tab .ico,h3.sec .ico{display:inline-block;width:20px;height:20px;position:relative;vertical-align:-5px;margin-right:6px;flex:none}
   .tab .ico{width:16px;height:16px;margin-right:4px;vertical-align:-4px;flex:none}
+  .tab .inf{font-size:16px;font-weight:800;line-height:1;margin-right:4px;flex:none;color:var(--coral)}
+  .tab.on .inf{color:#F8DA7A}
   .tab{padding-left:4px;padding-right:4px;overflow:visible}
   .tab{display:inline-flex;align-items:center;justify-content:center;gap:2px}
   .lb .when{color:var(--dim);flex:1;font-size:13px}
@@ -435,7 +440,7 @@
     <button class="tab on" data-tab="day"><span class="ico c f a-cat"></span>Today</button>
     <button class="tab" data-tab="week"><span class="ico c f a-bear"></span>Weekly</button>
     <button class="tab" data-tab="hof"><span class="ico c f a-orca"></span>All time</button>
-    <button class="tab" data-tab="endless"><span class="ico c f a-fox"></span>Cats</button>
+    <button class="tab" data-tab="endless"><span class="inf" aria-hidden="true">∞</span>Cats</button>
   </div>
   <div id="lbBody"></div>
   <span class="seal">福</span>
@@ -764,11 +769,13 @@ function renderNext(force){
   if(!force&&sig===lastQLen)return;
   lastQLen=sig;
   const row=$('miniRow');row.innerHTML='';
+  const roomy=mode!=='daily'&&queue.length<=8;   // Unlimited keeps six queued, so they can be legible
+  row.classList.toggle('roomy',roomy);
   queue.forEach((p,i)=>{
     const[h,w]=dims(p);
     const box=document.createElement('div');
     box.className='dp'+(i<3?' soon':'')+(p.tail?' closer':'')+(p.special?' power':'');
-    box.appendChild(pieceNode(p,p.special?16:5,!!p.special));
+    box.appendChild(pieceNode(p,p.special?16:(roomy?7:5),!!p.special));
     row.appendChild(box);
   });
   const nTail=queue.filter(p=>p.tail).length;
