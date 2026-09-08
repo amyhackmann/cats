@@ -1341,10 +1341,10 @@ function record(reason){
   $('shareBtn').style.display=mode==='daily'?'block':'none';$('shareBox').style.display='none';
   $('initIn').value=initials;$('initIn').classList.remove('bad');$('initWarn').classList.remove('show');
   const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
+  const left=seedsLeft(),loose=tilesOn();
   if(mode==='daily'){showCat($('overCat'),dayNo(playDate));$('overCat').style.display='block';}else $('overCat').style.display='none';
   $('finalScore').textContent=mode==='daily'?String(loose):score.toLocaleString();
   $('finalLbl').textContent=mode==='daily'?(left===0?'Board cleared':'Cats left on the board'):'Cats collected';
-  const left=seedsLeft(),loose=tilesOn();
   $('overTitle').textContent=won?'Board cleared!':mode!=='daily'?'No moves left':reason==='deck'?'Out of pieces':'No moves left';
   $('finalNote').textContent=mode!=='daily'
     ?`${score} cats collected in ${fmt(elapsed)}.`
