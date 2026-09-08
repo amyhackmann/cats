@@ -219,6 +219,10 @@
   .lb .ico,.tab .ico,h3.sec .ico{display:inline-block;width:20px;height:20px;position:relative;vertical-align:-5px;margin-right:6px;flex:none}
   .tab .ico{width:16px;height:16px;margin-right:4px;vertical-align:-4px;flex:none}
   .tab .inf{font-size:16px;font-weight:800;line-height:1;margin-right:4px;flex:none;color:var(--coral)}
+  .cta .inf{font-size:17px;font-weight:800;line-height:1;margin-right:6px;vertical-align:-1px}
+  .startsub{margin:8px 0 0!important;font-size:12px;color:var(--dim);line-height:1.35}
+  #startSheet .cta{margin-top:6px}
+  #startSheet .cta+.cta{margin-top:7px}
   .tab.on .inf{color:#F8DA7A}
   .tab{padding-left:4px;padding-right:4px;overflow:visible}
   .tab{display:inline-flex;align-items:center;justify-content:center;gap:2px}
@@ -429,6 +433,9 @@
   <p id="startNote" style="margin-top:6px">Daily #1</p>
   <p id="startWarn" class="unverified" style="display:none">This puzzle falls outside our verified schedule. It is fully playable, but a complete clear is not guaranteed.</p>
   <button class="cta" id="dealBtn">Deal the cats</button>
+  <button class="cta" id="dealEndless"><span class="inf" aria-hidden="true">∞</span>Unlimited Cat Mode</button>
+  <button class="cta" id="dealHelp">How to play</button>
+  <p class="startsub">One board a day for everyone, or cats until you run out of room.</p>
   <span class="seal">福</span>
 </div></div>
 
@@ -1772,8 +1779,9 @@ $('initSave').onclick=function(){
 };
 
 /* ---------- sheets pause the clock ---------- */
-function openSheet(id){sheetsOpen++;clockStop();$(id).classList.add('show');}
-function closeSheet(id){$(id).classList.remove('show');sheetsOpen=Math.max(0,sheetsOpen-1);if(!sheetsOpen&&alive&&elapsed>0)clockStart();}
+function openSheet(id){sheetsOpen++;clockStop();const el=$(id);el.style.zIndex=80+sheetsOpen;el.classList.add('show');}
+function closeSheet(id){const el=$(id);el.classList.remove('show');el.style.zIndex='';
+  sheetsOpen=Math.max(0,sheetsOpen-1);if(!sheetsOpen&&alive&&elapsed>0)clockStart();}
 
 /* ---------- buttons ---------- */
 document.querySelectorAll('.x').forEach(b=>b.onclick=()=>{
@@ -1782,7 +1790,14 @@ document.querySelectorAll('.x').forEach(b=>b.onclick=()=>{
   closeSheet(id);
 });
 $('upNext').onclick=()=>{renderDeck();openSheet('deckSheet');};
-$('dealBtn').onclick=()=>{firstLoad=false;unlock();$('startSheet').classList.remove('show');sheetsOpen=0;deal();};
+function leaveSplash(){                       // nothing may be left covering the board
+  firstLoad=false;unlock();
+  document.querySelectorAll('.sheet').forEach(el=>{el.classList.remove('show');el.style.zIndex='';});
+  sheetsOpen=0;
+}
+$('dealBtn').onclick=()=>{leaveSplash();if(mode!=='daily')reset('daily',dayKey());else deal();};
+$('dealEndless').onclick=()=>{leaveSplash();reset('free',null);};
+$('dealHelp').onclick=()=>openSheet('helpSheet');   // opens above the splash, which stays behind it
 $('helpBtn').onclick=()=>openSheet('helpSheet');
 $('aboutBtn').onclick=()=>openSheet('aboutSheet');
 
