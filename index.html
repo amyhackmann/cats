@@ -40,7 +40,7 @@
   .brandtext{display:flex;flex-direction:column;gap:1px;min-width:0}
   .barmark{height:20px;width:auto;max-width:150px}
   .metarow{width:100%;padding:0 3px;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px}
   .top{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 3px}
   .score{font-family:'LS Display','Fredoka',system-ui,sans-serif;font-weight:700;font-size:32px;line-height:1;letter-spacing:0;
     letter-spacing:.01em;font-variant-numeric:tabular-nums}
@@ -155,8 +155,8 @@
   #fortune{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px) rotate(-1.5deg);z-index:70;pointer-events:none;
     max-width:min(86vw,340px);padding:9px 14px 9px 40px;background:#FFF6E6;color:var(--text);border:1px solid #D9B46A;
     border-radius:6px;box-shadow:0 8px 20px rgba(58,46,40,.25);font-size:14px;font-weight:700;line-height:1.3;opacity:0;
-    transition:opacity .35s ease,transform .35s ease}
-  #fortune::before{content:'';position:absolute;left:10px;top:50%;width:22px;height:22px;transform:translateY(-50%);
+    transition:opacity .5s ease,transform .5s ease}
+  #fortune::before,#overFortune::before{content:'';position:absolute;left:10px;top:50%;width:22px;height:22px;transform:translateY(-50%);
     background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2030%2032%27%3E%3Cdefs%3E%3Cfilter%20id%3D%27s%27%20x%3D%27-30%25%27%20y%3D%27-30%25%27%20width%3D%27160%25%27%20height%3D%27160%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%27.8%27%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20x%3D%273.2%27%20y%3D%277.4%27%20width%3D%2724%27%20height%3D%2724%27%20rx%3D%277%27%20fill%3D%27%233A2E28%27%20fill-opacity%3D%27.18%27%20filter%3D%27url%28%23s%29%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%276%27%20width%3D%2724%27%20height%3D%2724%27%20rx%3D%277%27%20fill%3D%27%23FFF3DA%27%2F%3E%3Crect%20x%3D%274.1%27%20y%3D%277.1%27%20width%3D%2721.8%27%20height%3D%2721.8%27%20rx%3D%276.2%27%20fill%3D%27none%27%20stroke%3D%27%23F3C64B%27%20stroke-width%3D%271.4%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M4.4%2020.4q10.6-15.6%2021.2%200q-3.8%205.4-10.6%201.4q-6.8%204-10.6-1.4Z%27%20fill%3D%27%23E9B96E%27%20stroke%3D%27%23B97D31%27%20stroke-width%3D%271%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M15%2021.8q-1.4-5.6%200-11%27%20fill%3D%27none%27%20stroke%3D%27%23B97D31%27%20stroke-width%3D%270.9%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M8%2016.6q7-7.4%2014%200%27%20fill%3D%27none%27%20stroke%3D%27%23ffffff%27%20stroke-width%3D%271%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-opacity%3D%27.55%27%2F%3E%3Cpath%20d%3D%27M12%2022.6l5.6-.7.8%204.2-5.6.7Z%27%20fill%3D%27%23FFF6E3%27%20stroke%3D%27%23B97D31%27%20stroke-width%3D%270.7%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M13.6%2024.6l3-.4%27%20fill%3D%27none%27%20stroke%3D%27%23C8382F%27%20stroke-width%3D%270.8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M23.4%209.2l.55%201.4%201.4.55-1.4.55-.55%201.4-.55-1.4-1.4-.55%201.4-.55Z%27%20fill%3D%27%23F3C64B%27%2F%3E%3C%2Fsvg%3E") center/contain no-repeat}
   #fortune.show{opacity:1;transform:translate(-50%,0) rotate(-1.5deg)}
   @keyframes rise{0%{opacity:0;transform:translate(-50%,0) scale(.6)}
@@ -195,6 +195,9 @@
   .glyph{width:30px;height:38px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:15px;
     background-color:transparent!important;background-size:100% 100%;background-repeat:no-repeat}
   .glyph.plain{background:var(--empty)!important;height:30px}
+  .glyphstack{width:30px;display:flex;flex-direction:column;align-items:center;gap:2px;flex:none}
+  .glyphstack .glyph{margin:0}
+  .card.rules .glyphstack{width:26px}
   .cta{width:100%;margin-top:10px;padding:15px;border-radius:16px;border:0;cursor:pointer;background:var(--amber);
     color:#3A2E28;font-family:'LS Display','Fredoka',system-ui,sans-serif;font-weight:600;font-size:17px}
   .cta.ghost{background:transparent;border:1px solid var(--edge);color:var(--text)}
@@ -233,6 +236,8 @@
   .lb.top .pt{color:var(--red)}
   .lb.mine{background:rgba(248,218,122,.22);border-radius:8px}
   .lb.mine .ini{color:var(--red)}
+  #overFortune{margin:6px 0 2px!important;padding:9px 12px 9px 40px;position:relative;text-align:left;
+    background:#FFF6E6;border:1px solid #D9B46A;border-radius:6px;font-size:13.5px;font-weight:700;line-height:1.35}
   #hooray{display:none;margin:10px 0 2px;padding:10px 12px;border-radius:12px;text-align:center;
     background:rgba(248,218,122,.28);border:1px solid var(--amber);color:var(--text);font-weight:700;font-size:15px}
   #hooray.show{display:block;animation:hoorayPop .5s ease}
@@ -394,10 +399,10 @@
     <div class="row"><span class="glyph c f a-bear"></span><span><b>Three of a kind</b> touching clear. So does a full row or column.</span></div>
     <div class="row"><span class="glyph c f a-fox"></span><span><b>Every cat counts</b>, yours too. It ends when the board's empty, the pieces run out, or nothing fits.</span></div>
     <div class="row"><span class="glyph c f a-orca"></span><span><b>See the whole deck.</b> The last ten pieces are small — plan the finish.</span></div>
-    <div class="row"><span class="glyph c f a-bomb"></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
+    <div class="row"><span class="glyphstack"><span class="glyph c f a-bomb"></span><span class="glyph c f a-bolt"></span></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
   </div>
 
-  <div class="row plainrow"><span class="glyph plain">∞</span><span><b>Unlimited Cat Mode</b> — collect as many cats as you can, until you can't move any more. Top scores are ranked on most cats.</span></div>
+  <div class="row plainrow"><span class="glyphstack"><span class="glyph plain">∞</span><span class="glyph c f a-cat"></span></span><span><b>Unlimited Cat Mode</b> — collect as many cats as you can, until you can't move any more. Top scores are ranked on most cats.</span></div>
 
   <button class="cta" id="helpClose">Got it</button>
   <span class="seal">福</span>
@@ -447,7 +452,7 @@
     <button class="tab on" data-tab="day"><span class="ico c f a-cat"></span>Today</button>
     <button class="tab" data-tab="week"><span class="ico c f a-bear"></span>Weekly</button>
     <button class="tab" data-tab="hof"><span class="ico c f a-orca"></span>All time</button>
-    <button class="tab" data-tab="endless"><span class="inf" aria-hidden="true">∞</span>Cats</button>
+    <button class="tab" data-tab="endless"><span class="ico c f a-cat"></span><span class="inf" aria-hidden="true">∞</span>Cats</button>
   </div>
   <div id="lbBody"></div>
   <span class="seal">福</span>
@@ -485,6 +490,7 @@
   <div class="lbl2" id="finalLbl">Board cleared</div>
   <div class="final" id="finalScore">0</div>
   <p id="finalNote"></p>
+  <p id="overFortune" style="display:none"></p>
   <div class="initrow" id="initRow">
     <span>Initials</span>
     <input id="initIn" maxlength="3" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Three initials for the scoreboard">
@@ -596,7 +602,9 @@ function reset(newMode,date,isDemo){
   elapsed=0;timing=false;shownClock='0:00';$('clockVal').textContent='0:00';shownPct=0;melodyPos=0;
   document.body.classList.remove('tight');
   tray=[null,null,null];buildQueue();refill();
-  lastQLen=null;size();drawBoard();drawTray();renderNext(true);hud();
+  lastQLen=null;
+  cells.forEach(el=>{el.style.opacity='';});
+  size();drawBoard();drawTray();renderNext(true);hud();
   showCat($('barCat'),dayNo(mode==='daily'?playDate:today));
   if(firstLoad){
     for(let i=0;i<N*N;i++)if(board[i])cells[i].style.opacity='0';
@@ -900,7 +908,15 @@ function preview(){
     face(el,p.colors[k]);
   });
 }
-function drop(){
+function drop(e){
+  if(drag&&e&&typeof e.clientX==='number'){
+    const w=(drag.w*PITCH-GAP)*S,h=(drag.h*PITCH-GAP)*S;
+    drag.tx=e.clientX-w/2;drag.ty=e.clientY-h-CELL*S*0.85;
+    const b=drag.rect,P=PITCH*S;
+    drag.c=Math.round((drag.tx-b.left-GAP*S)/P);
+    drag.r=Math.round((drag.ty-b.top-GAP*S)/P);
+    drag.ok=fits(drag.p,drag.r,drag.c);
+  }
   window.removeEventListener('pointermove',move);
   window.removeEventListener('pointerup',drop);
   window.removeEventListener('pointercancel',drop);
@@ -1140,9 +1156,12 @@ const SFX={
   thunk:()=>{click(1100,2.5,.05,.11);thump(95,.13,.12);},
   nope:()=>{click(900,2,.03,.04);click(900,2,.03,.04,.06);},
   note:(col,k)=>{click(1700,2.5,.025,.03);piano(MELODY[k%MELODY.length]*(OCT[col]||1),.085);},
-  cookie:()=>{click(2600,1.2,.05,.11);click(1400,1.4,.09,.09,.04);          // the snap of a cookie cracking
-              [5,7,9].forEach((k,i)=>piano(PENT[k],.075,.12+i*.06,1.4));},     // then a little run of luck
-  zap:()=>{[0,2,4,5,7,9].forEach((k,i)=>bell(PENT[k]*2,.05,i*.05,.6));gliss(.05,.12,.03);},   // red packet: a shower of coins
+  cookie:()=>{click(3000,1.1,.035,.10);click(1500,1.7,.07,.06,.035);        // the snap, then the paper slip
+              [0,2,4,7].forEach((k,i)=>piano(PENT[k],.085,.11+i*.08,1.9));    // a phrase that climbs, unhurried
+              bell(PENT[7]*2,.03,.46,1.7);},                                  // one soft chime to close
+  zap:()=>{click(4200,.9,.05,.055);                                           // the envelope opening
+           [9,7,5,4,2,0].forEach((k,i)=>bell(PENT[k]*2,.052,.05+i*.055,.55)); // coins tumbling down
+           bell(PENT[0]*2,.06,.42,1.5);thump(120,.11,.045,.40);},             // and settling in a little heap
   power:()=>{[5,7,9].forEach((k,i)=>piano(PENT[k],.07,i*.07,1.2));},
   win:()=>{gliss(.08,0,.04);gliss(.06,.5,.035);                                       // two sweeps up
            [523.3,659.3,784.0,1046.5].forEach(f=>piano(f,.09,1.05,2.4));},          // land on the chord
@@ -1441,11 +1460,30 @@ const FORTUNES=[
 ];
 let fortuneAt=Math.floor(Math.random()*FORTUNES.length);
 async function loadFortune(){try{const r=await window.storage.get('ls:fortune');if(r&&r.value)fortuneAt=parseInt(r.value)%FORTUNES.length;}catch(e){}}
+let fortuneTimer=0,pendingFortune='';
+function parkFortune(text){            // the run is ending: keep it for the results card
+  pendingFortune=text||pendingFortune;
+  clearTimeout(fortuneTimer);
+  $('fortune').classList.remove('show');
+}
+function paintFortune(){               // called as the results card is built
+  const el=$('overFortune');
+  if(!pendingFortune){el.style.display='none';el.textContent='';return;}
+  el.textContent=pendingFortune;el.style.display='block';
+  pendingFortune='';
+}
 function showFortune(){
   const f=FORTUNES[fortuneAt%FORTUNES.length];fortuneAt=(fortuneAt+1)%FORTUNES.length;
   try{window.storage.set('ls:fortune',String(fortuneAt));}catch(e){}
+  if(!alive||recorded||sheetsOpen>0||$('overSheet').classList.contains('show')){
+    parkFortune(f);                    // a sheet would cover the toast, so hold it back
+    if($('overSheet').classList.contains('show'))paintFortune();
+    return;
+  }
   const el=$('fortune');el.textContent=f;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),4200);
+  clearTimeout(fortuneTimer);                       // a second cookie must not cut this one short
+  const hold=Math.min(9000,4200+f.length*55);       // long enough to actually read it
+  fortuneTimer=setTimeout(()=>el.classList.remove('show'),hold);
 }
 
 /* ---------- storage, initials, scoreboards ---------- */
@@ -1628,6 +1666,8 @@ function record(reason){
     saveHistory();   // local only — nothing goes to the scoreboard until Save is pressed
   }
   recorded=true;
+  if($('fortune').classList.contains('show'))parkFortune($('fortune').textContent);
+  paintFortune();
   $('initRow').style.display='flex';
   $('shareBtn').style.display=mode==='daily'?'block':'none';$('shareBox').style.display='none';
   submitted=false;$('hooray').classList.remove('show');
