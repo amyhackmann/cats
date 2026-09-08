@@ -1,10 +1,14 @@
-// Usage: node prove-dailies.js <start-date> <days> variants.json   (run next to lucky-totems.html; resumes; then paste the table into DAILY_TABLE)
-// Usage: node precompute2.js <start> <days> variants2.json
+// Usage: node prove-dailies.js <start-date> <days> <out.json>
+//   Run from the repo root, next to index.html. Safe to stop and restart: it skips
+//   days already present in <out.json> and rewrites the file after every day.
+//   Seed <out.json> with the current table first:  node dump-dailies.js
+//   When it finishes:                              node merge-dailies.js dailies.json
+//   Roughly 8 seconds per day on one core, so a full run to 2030 takes a few hours.
 // For each day: pick a seed variant, PLANT a solution by choosing the last 10 pieces from ordinary
 // small single-colour shapes, then check the greedy bot wins 1-16 of 80 (solvable but not easy).
 // Stores [variant, first-winning-playout, wins, tail] so the in-game solver reproduces the proof.
 const fs=require('fs');
-const src=fs.readFileSync('lucky-totems.html','utf8');
+const src=fs.readFileSync('index.html','utf8');
 let js=src.split('<script>')[1].split('</script>')[0];
 js=js.replace(/const DAILY_TABLE=\{[^;]*\};/,"const DAILY_TABLE={};window.__setV=(k,v,tail)=>{DAILY_TABLE[k]=[v,-1,0,tail||''];};")
      .replace("reset('daily',dayKey());\nloadHistory();","window.__t={buildDaily,playout,mulberry,hash,shiftDay,simFits,simApply,simResolve,simStep,KEYS,TAILSHAPES,tailPiece};");
