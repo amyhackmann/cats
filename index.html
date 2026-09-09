@@ -1537,7 +1537,7 @@ async function fetchLeaderboard(){
   const ws=weekStart(today),we=shiftDay(ws,7);
   let q;
   if(tab==='day'){
-    q=`?tab=day&start=${encodeURIComponent(shiftDay(today,-3))}&end=${encodeURIComponent(today)}`;
+    q=`?tab=day&start=${encodeURIComponent(shiftDay(today,-2))}&end=${encodeURIComponent(today)}`;
   }else if(tab==='week'){
     q=`?tab=week&start=${encodeURIComponent(ws)}&end=${encodeURIComponent(shiftDay(we,-1))}`;
   }else if(tab==='hof'){
@@ -1623,7 +1623,7 @@ async function loadHistory(){
   try{const r=await window.storage.get(SKEY);history=JSON.parse(r.value)||[];}catch(e){history=[];}
   try{const r=await window.storage.get(IKEY);if(r&&/^[A-Z]{3}$/.test(r.value))initials=r.value;}catch(e){}
   $('initIn').value=initials;hud();
-  for(let d=1;d<=3;d++){const k=shiftDay(today,-d);
+  for(let d=1;d<=2;d++){const k=shiftDay(today,-d);
     try{const r=await window.storage.get('lt:sol:'+k);if(r&&r.value)solCache[k]=JSON.parse(r.value);}catch(e){}}
 }
 async function saveHistory(){try{await window.storage.set(SKEY,JSON.stringify(history.slice(-500)));}catch(e){}}
@@ -1731,8 +1731,8 @@ function renderBoardFrom(runs){
     const t=rankRuns(runs.filter(h=>h.d===today)).slice(0,10);
     html+=sec(`<span class="ico c f a-cat"></span>Today · Daily #${dayNo(today)}`);
     html+=t.length?t.map((h,i)=>rowHTML(i+1,'run '+(i+1),h,i===0)).join(''):'<div class="empty">No runs today yet.</div>';
-    for(let d=1;d<=3;d++){
-      const k=shiftDay(today,-d),r=rankRuns(runs.filter(h=>h.d===k)).slice(0,3);
+    for(let d=1;d<=2;d++){
+      const k=shiftDay(today,-d),r=rankRuns(runs.filter(h=>h.d===k)).slice(0,5);
       html+=`<h3 class="sec withbtn">${pretty(k)} · Daily #${dayNo(k)}<button class="playday" data-solve="${k}">Solve</button></h3>`;
       html+=r.length?r.map((h,i)=>rowHTML(i+1,'run '+(i+1),h,i===0)).join(''):'<div class="empty">Not played yet.</div>';
     }
