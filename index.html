@@ -1591,28 +1591,44 @@ async function celebrate(entry){
       const rk=a=>[...a].sort((x,y)=>(y.s||0)-(x.s||0)||(x.ms||0)-(y.ms||0));
       const pl=placeOf(rows,entry,rk);
       if(pl===1)wins.push([4,'Top of Unlimited Cat Mode','Nobody has collected more cats.']);
-      else if(pl<=10)wins.push([3,ordinal(pl)+' in Unlimited Cat Mode','Out of every run ever saved.']);
+      else if(pl>=2&&pl<=10)wins.push([3,ordinal(pl)+' in Unlimited Cat Mode','Out of every run ever saved.']);
     }
   }else{
     const sameDay=mine.filter(h=>h.d===entry.d);
-    const better=sameDay.filter(h=>rankRuns([h,entry])[0]===entry).length===sameDay.length;
+    const better=sameDay.length===0||sameDay.every(h=>rankRuns([h,entry])[0]===entry);
     if(sameDay.length&&better)wins.push([2,'New personal best for today','You beat your own run on Daily #'+dayNo(entry.d)+'.']);
+
+    const previousBest=myBest(mine);
+    const entryBeatsBest=!previousBest||rankRuns([entry,previousBest])[0]===entry;
     const ws=weekStart(today);
     const [hof,week]=await Promise.all([
       boardRows('?tab=hof'),
       boardRows('?tab=week&start='+encodeURIComponent(ws)+'&end='+encodeURIComponent(shiftDay(ws,6)))
     ]);
+
     if(week){
-      const pl=placeOf(week,entry,rankRuns);
-      if(pl===1)wins.push([4,'Top of the week','Best run anyone has saved since Monday.']);
-      else if(pl<=5)wins.push([3,ordinal(pl)+' this week','On the weekly board.']);
+      const reference=entryBeatsBest?entry:previousBest;
+      const pl=reference?placeOf(week,reference,rankRuns):0;
+      if(entryBeatsBest&&pl===1)wins.push([4,'Top of the week','Best run anyone has saved since Monday.']);
+      else if(entryBeatsBest&&pl>=2&&pl<=5)wins.push([3,ordinal(pl)+' this week','On the weekly board.']);
     }
+
     if(hof){
-      const pl=placeOf(hof,entry,rankRuns);
-      if(pl===1)wins.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
-      else if(pl>=2 && pl<=3)wins.push([5,'Hall of Fame — '+ordinal(pl),'Top three of all time.']);
-      else if(pl>=4 && pl<=25)wins.push([3,ordinal(pl)+' in the Hall of Fame','Top 25 of all time.']);
-      else wins.push([1,'Not in the Hall of Fame yet','Keep playing — your best run can still climb the board.']);
+      const reference=entryBeatsBest?entry:previousBest;
+      const pl=reference?placeOf(hof,reference,rankRuns):0;
+      if(pl===1){
+        wins.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
+      }else if(pl>=2&&pl<=3){
+        wins.push([5,'Hall of Fame — '+ordinal(pl),'Top three of all time.']);
+      }else if(pl>=4&&pl<=25){
+        if(entryBeatsBest){
+          wins.push([3,ordinal(pl)+' in the Hall of Fame','Top 25 of all time.']);
+        }else{
+          wins.push([3,'Your best is '+ordinal(pl)+' in the Hall of Fame','This run didn’t beat your best.']);
+        }
+      }else{
+        wins.push([1,'Not in the Hall of Fame yet','Keep playing — your best run can still climb the board.']);
+      }
     }
   }
   if(!wins.length)return;
