@@ -258,6 +258,8 @@
     box-shadow:0 3px 0 var(--lacquer);transition:transform .05s ease,box-shadow .05s ease,background .15s}
   .initrow .save:active{transform:translateY(3px);box-shadow:0 0 0 var(--lacquer)}
   .initrow .save.done{background:#2E8B57;box-shadow:0 3px 0 #1E6B3F}
+  .initrow .save:disabled{background:#C9C2B6;color:#F4F0E8;box-shadow:0 3px 0 #ADA69B;
+    cursor:not-allowed;transform:none}
   #shareBox,#aboutBox{width:100%;margin-top:8px;border:1px solid var(--edge);border-radius:12px;padding:10px;
     background:#fff;color:var(--text);font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.5;
     resize:none;-webkit-user-select:text;user-select:text}
@@ -1507,6 +1509,8 @@ const BANNED=new Set(['ASS','AZZ','ARS','FUK','FUC','FCK','FUX','FUQ','PHK','CUM
   'BIH','FAG','FGT','NIG','NGR','NGA','NGZ','KKK','WOP','JAP','KYK','NAZ','NZI','HTL','PDO','PDF','RPE']);
 const canon=v=>v.toUpperCase().split('').map(ch=>LEET[ch]||ch).join('');
 const banned=v=>BANNED.has(canon(v));
+const PLACEHOLDER='AAA';                                  // the default: not a real name, never saved
+const usableInits=v=>/^[A-Z]{3}$/.test(v)&&v!==PLACEHOLDER&&!banned(v);
 
 /* ---------- Cloudflare D1 leaderboard ---------- */
 const SCORE_API='/api/scores';
@@ -1691,8 +1695,8 @@ function record(reason){
   $('shareBtn').style.display=mode==='daily'?'block':'none';$('shareBox').style.display='none';
   submitted=false;$('hooray').classList.remove('show');
   $('initIn').value=initials;$('initIn').classList.remove('bad');$('initWarn').classList.remove('show');
-  const sv=$('initSave');sv.textContent='Save';sv.classList.remove('done');sv.disabled=false;
-  $('saveHint').textContent='Your run is only on the scoreboard once you press Save.';
+  const sv=$('initSave');sv.textContent='Save';sv.classList.remove('done');syncSaveBtn();
+  $('saveHint').textContent=usableInits(initIn.value)?'Your run is only on the scoreboard once you press Save.':'Enter your initials to save this run.';
   $('saveHint').classList.remove('done');
   const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
   const left=seedsLeft(),loose=tilesOn();
@@ -1815,12 +1819,19 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;re
 
 /* initials */
 const initIn=$('initIn');
+/* Save stays greyed out until the field holds three letters that are not the AAA default */
+function syncSaveBtn(){
+  const sv=$('initSave');
+  if(sv.textContent==='Saving…')return;                   // mid-request: leave it alone
+  sv.disabled=!usableInits(initIn.value);
+}
 initIn.addEventListener('input',()=>{
   const v=initIn.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(0,3);
   initIn.value=v;
-  const bad=v.length===3&&banned(v);
+  const bad=v.length===3&&(banned(v)||v===PLACEHOLDER);
   initIn.classList.toggle('bad',bad);$('initWarn').classList.toggle('show',bad);
-  if(bad)$('initWarn').textContent='Not that one. Try different initials.';
+  if(bad)$('initWarn').textContent=v===PLACEHOLDER?'AAA is the placeholder. Use your own initials.':'Not that one. Try different initials.';
+  syncSaveBtn();
   if(submitted){                                   // they are editing after saving
     submitted=false;
     const sv=$('initSave');sv.textContent='Save';sv.classList.remove('done');
@@ -1828,12 +1839,12 @@ initIn.addEventListener('input',()=>{
     $('saveHint').classList.remove('done');
   }
 });
-initIn.addEventListener('blur',()=>{if(!/^[A-Z]{3}$/.test(initIn.value))initIn.value=initials;});
+initIn.addEventListener('blur',()=>{if(!/^[A-Z]{3}$/.test(initIn.value))initIn.value=initials;syncSaveBtn();});
 $('initSave').onclick=function(){
   const v=initIn.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(0,3);
-  if(v.length<3||banned(v)){
+  if(!usableInits(v)){
     initIn.classList.add('bad');$('initWarn').classList.add('show');
-    $('initWarn').textContent=v.length<3?'Three letters, please.':'Not that one. Try different initials.';return;
+    $('initWarn').textContent=v.length<3?'Three letters, please.':v===PLACEHOLDER?'AAA is the placeholder. Use your own initials.':'Not that one. Try different initials.';return;
   }
   initials=v;initIn.value=v;
   saveInitials();
@@ -1842,15 +1853,14 @@ $('initSave').onclick=function(){
   const btn=this;
   btn.disabled=true;btn.textContent='Saving…';
   submitScore(lastEntry).then(ok=>{
-    btn.disabled=false;
     if(ok){
       submitted=true;lastEntry.sv=1;saveHistory();remoteRuns=null;
-      btn.textContent='Saved';btn.classList.add('done');
+      btn.textContent='Saved';btn.classList.add('done');btn.disabled=false;
       $('saveHint').textContent='Saved to the scoreboard as '+v+'.';
       $('saveHint').classList.add('done');
       celebrate(lastEntry);
     }else{
-      btn.textContent='Retry';btn.classList.remove('done');
+      btn.textContent='Retry';btn.classList.remove('done');btn.disabled=false;
       $('saveHint').textContent='Could not reach the scoreboard. Tap Retry.';
       $('saveHint').classList.remove('done');
     }
