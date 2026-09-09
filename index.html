@@ -1567,9 +1567,8 @@ function bestPerPlayer(rows,rank){
   return rank(Object.values(by));
 }
 function placeOf(rows,entry,rank){
-  const ranked=bestPerPlayer(rows,rank);
-  const key=who(entry);
-  const i=ranked.findIndex(h=>who(h)===key);
+  const merged=bestPerPlayer(rows.filter(h=>h.run_id!==entry.run_id).concat([entry]),rank);
+  const i=merged.findIndex(h=>h.run_id===entry.run_id);
   return i<0?0:i+1;
 }
 function showHooray(line,sub){
@@ -1579,62 +1578,63 @@ function showHooray(line,sub){
   try{SFX.power();}catch(e){}
   for(let i=0;i<3;i++)setTimeout(()=>{try{SFX.cookie();}catch(e){}},250+i*160);
 }
+/* where a saved run lands on a board the server only sends the top 25 of.
+   on:true  -> pl is a real rank.  held:true -> an earlier run of yours outranks this one.
+   on:false -> outside the top 25; tail is the 25th row, gap is how far behind it. */
+function landing(rows,entry,rank,gapOf){
+  if(!rows)return null;
+  const merged=bestPerPlayer(rows.filter(h=>h.run_id!==entry.run_id).concat([entry]),rank);
+  const i=merged.findIndex(h=>h.run_id===entry.run_id);
+  if(i<0){const j=merged.findIndex(h=>who(h)===who(entry));return j<0?null:{on:true,held:true,pl:j+1,best:merged[j]};}
+  if(i<25)return{on:true,pl:i+1};
+  const tail=merged[24];
+  return{on:false,pl:i+1,tail,gap:gapOf(entry,tail)};
+}
+const catGap=(a,b)=>leftOf(a)-leftOf(b);
+const scoreGap=(a,b)=>(b.s||0)-(a.s||0);
+const behind=(g,unit)=>g<=0?'level on '+unit+', behind on time':g+' '+unit+(g===1?'':'s')+' behind 25th';
+
+/* every save gets one line: a win if there is one, an honest standing if not */
 async function celebrate(entry){
   const el=$('hooray');el.classList.remove('show');
   const mine=savedRuns(history).filter(h=>h.m===entry.m&&h.run_id!==entry.run_id);
-  const wins=[];
+  const msgs=[];
   if(entry.m==='endless'){
     const prev=mine.reduce((a,h)=>Math.max(a,h.s||0),0);
-    if((entry.s||0)>prev&&prev>0)wins.push([2,'New personal best — '+(entry.s||0).toLocaleString()+' cats','Your previous best was '+prev.toLocaleString()+'.']);
+    if((entry.s||0)>prev&&prev>0)msgs.push([2,'New personal best — '+(entry.s||0).toLocaleString()+' cats','Your previous best was '+prev.toLocaleString()+'.']);
     const rows=await boardRows('?tab=endless');
-    if(rows){
-      const rk=a=>[...a].sort((x,y)=>(y.s||0)-(x.s||0)||(x.ms||0)-(y.ms||0));
-      const pl=placeOf(rows,entry,rk);
-      if(pl===1)wins.push([4,'Top of Unlimited Cat Mode','Nobody has collected more cats.']);
-      else if(pl<=10)wins.push([3,ordinal(pl)+' in Unlimited Cat Mode','Out of every run ever saved.']);
-    }
+    const rk=a=>[...a].sort((x,y)=>(y.s||0)-(x.s||0)||(x.ms||0)-(y.ms||0));
+    const L=landing(rows,entry,rk,scoreGap);
+    if(L&&L.on&&L.held)msgs.push([1,'Saved. Your '+ordinal(L.pl)+' place still stands','Your best is '+(L.best.s||0).toLocaleString()+' cats.']);
+    else if(L&&L.on&&L.pl===1)msgs.push([4,'Top of Unlimited Cat Mode','Nobody has collected more cats.']);
+    else if(L&&L.on&&L.pl<=10)msgs.push([3,ordinal(L.pl)+' in Unlimited Cat Mode','Out of every run ever saved.']);
+    else if(L&&L.on)msgs.push([2,ordinal(L.pl)+' in Unlimited Cat Mode','On the top 25.']);
+    else if(L)msgs.push([1,'Saved — just outside the top 25',behind(L.gap,'cat')+'. Every run counts.']);
   }else{
     const sameDay=mine.filter(h=>h.d===entry.d);
     const better=sameDay.filter(h=>rankRuns([h,entry])[0]===entry).length===sameDay.length;
-    if(sameDay.length&&better)wins.push([2,'New personal best for today','You beat your own run on Daily #'+dayNo(entry.d)+'.']);
+    if(sameDay.length&&better)msgs.push([2,'New personal best for today','You beat your own run on Daily #'+dayNo(entry.d)+'.']);
     const ws=weekStart(today);
     const [hof,week]=await Promise.all([
       boardRows('?tab=hof'),
       boardRows('?tab=week&start='+encodeURIComponent(ws)+'&end='+encodeURIComponent(shiftDay(ws,6)))
     ]);
-
-    /* The server leaderboard is the source of truth for a player's best. */
-    const playerKey=who(entry);
-    const serverHofBest=hof ? hof.find(h=>who(h)===playerKey) : null;
-    const serverWeekBest=week ? week.find(h=>who(h)===playerKey) : null;
-    const entryIsHofBest=!!serverHofBest&&serverHofBest.run_id===entry.run_id;
-    const entryIsWeekBest=!!serverWeekBest&&serverWeekBest.run_id===entry.run_id;
-
-    if(week){
-      const reference=serverWeekBest||entry;
-      const pl=serverWeekBest?placeOf(week,reference,rankRuns):0;
-      if(entryIsWeekBest&&pl===1)wins.push([4,'Top of the week','Best run anyone has saved since Monday.']);
-      else if(entryIsWeekBest&&pl>=2&&pl<=5)wins.push([3,ordinal(pl)+' this week','On the weekly board.']);
-    }
-    if(hof){
-      const reference=serverHofBest||entry;
-      const pl=serverHofBest?placeOf(hof,reference,rankRuns):0;
-      if(entryIsHofBest&&pl===1){
-        wins.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
-      }else if(entryIsHofBest&&pl>=2&&pl<=3){
-        wins.push([5,'Hall of Fame — '+ordinal(pl),'Top three of all time.']);
-      }else if(entryIsHofBest&&pl>=4&&pl<=25){
-        wins.push([3,ordinal(pl)+' in the Hall of Fame','Top 25 of all time.']);
-      }else if(!entryIsHofBest&&serverHofBest&&pl>=1&&pl<=25){
-        wins.push([3,'Your best is '+ordinal(pl)+' in the Hall of Fame','This run didn’t beat your best.']);
-      }else{
-        wins.push([1,'Not in the Hall of Fame yet','Keep playing — your best run can still climb the board.']);
-      }
-    }
+    const W=landing(week,entry,rankRuns,catGap);
+    if(W&&W.on&&W.held)msgs.push([1,'Saved. Your '+ordinal(W.pl)+' this week still stands','Your best since Monday: '+leftOf(W.best)+' left.']);
+    else if(W&&W.on&&W.pl===1)msgs.push([4,'Top of the week','Best run anyone has saved since Monday.']);
+    else if(W&&W.on&&W.pl<=5)msgs.push([3,ordinal(W.pl)+' this week','On the weekly board.']);
+    else if(W&&W.on)msgs.push([2,ordinal(W.pl)+' this week','Top 25 since Monday.']);
+    else if(W)msgs.push([1,'Saved — just outside the weekly top 25',behind(W.gap,'cat')+'. Tomorrow is a fresh board.']);
+    const H=landing(hof,entry,rankRuns,catGap);
+    if(H&&H.on&&H.held)msgs.push([0,'Saved. Your Hall of Fame '+ordinal(H.pl)+' still stands','Your best ever: '+leftOf(H.best)+' left.']);
+    else if(H&&H.on&&H.pl===1)msgs.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
+    else if(H&&H.on&&H.pl<=3)msgs.push([5,'Hall of Fame — '+ordinal(H.pl),'Top three of all time.']);
+    else if(H&&H.on)msgs.push([3,ordinal(H.pl)+' in the Hall of Fame','Top 25 of all time.']);
+    else if(H)msgs.push([0,'Saved — outside the Hall of Fame top 25',behind(H.gap,'cat')+'. Keep clearing.']);
   }
-  if(!wins.length)return;
-  wins.sort((a,b)=>b[0]-a[0]);
-  showHooray(wins[0][1],wins[0][2]);
+  if(!msgs.length)msgs.push([0,'Saved','Your run is on the scoreboard.']);
+  msgs.sort((a,b)=>b[0]-a[0]);
+  showHooray(msgs[0][1],msgs[0][2]);
 }
 
 async function loadHistory(){
@@ -1694,6 +1694,7 @@ function record(reason){
   const sv=$('initSave');sv.textContent='Save';sv.classList.remove('done');sv.disabled=false;
   $('saveHint').textContent='Your run is only on the scoreboard once you press Save.';
   $('saveHint').classList.remove('done');
+  const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
   const left=seedsLeft(),loose=tilesOn();
   if(mode==='daily'){showCat($('overCat'),dayNo(playDate));$('overCat').style.display='block';}else $('overCat').style.display='none';
   $('finalScore').textContent=mode==='daily'?String(loose):score.toLocaleString();
@@ -1704,7 +1705,7 @@ function record(reason){
     :(won?`Every cat gone in ${fmt(elapsed)}. A perfect clear.`
         :`${pct}% of the board cleared in ${fmt(elapsed)}.`)
       +` ${score} cats cleared`+(piecesLeft()?`, ${piecesLeft()} piece${piecesLeft()===1?'':'s'} never used.`:', every piece used.')
-      +'.';
+      +(rank===1&&dailyRuns().length>1?' Your best run yet.':'');
   hud();
   setTimeout(()=>{
     $('overSheet').classList.add('show');
@@ -1941,11 +1942,12 @@ async function shareOut(text,btn,box){
 $('shareBtn').onclick=async function(){
   const pct=clearedPct(),n=Math.round(pct/10),left=seedsLeft();
   const bar='🟨'.repeat(n)+'⬜'.repeat(10-n);
+  const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
   const loose=tilesOn();
   const line3=pct===100?`Board cleared in ${fmt(elapsed)}`:`${loose} cat${loose===1?'':'s'} left after ${fmt(elapsed)}`;
   const brag=pct===100?'Can you do it faster?':`I got stuck with ${piecesLeft()} pieces to spare. Can you empty it?`;
   const text=`🐱 LUCKY STREAK 好运连连 #${dayNo(playDate)}\n${bar} ${pct}%\n${line3}\n`
-    +(pct<100?`⏱ ${fmt(elapsed)}`:`🧩 ${piecesLeft()} pieces unused`)
+    +(pct<100?`⏱ ${fmt(elapsed)}`:`🧩 ${piecesLeft()} pieces unused`)+(rank===1&&dailyRuns().length>1?' · personal best':'')
     +`\n${brag}`+(SHARE_URL?`\n${SHARE_URL}`:'');
   shareOut(text,this,$('shareBox'));
 };
