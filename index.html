@@ -1723,6 +1723,20 @@ function renderBoard(){
     if(seq===scoreFetchSeq && remoteRuns===null)renderBoardFrom(localRuns);
   });
 }
+/* The board only ships the top rows, so a player outside the cut is absent from
+   the server data entirely. Their own best comes from local history instead. */
+function standing(mine,list,label,endless){
+  if(!mine)return `<div class="empty">No saved ${label} run yet — one save puts you on the board.</div>`;
+  if(playerId&&list.some(h=>h.pid===playerId))return '';
+  const best=endless?`${(mine.s||0).toLocaleString()} cats`:`${leftOf(mine)} left`;
+  const tail=list[list.length-1];
+  if(!tail)return `<div class="empty">Your best: ${best}. Saved and counted.</div>`;
+  const gap=endless?(tail.s||0)-(mine.s||0):leftOf(mine)-leftOf(tail);
+  if(gap<=0)return `<div class="empty">Your best: ${best} — right on the edge of the top ${list.length}.</div>`;
+  return `<div class="empty">Your best: ${best} — ${gap} ${gap===1?'cat':'cats'} off the top ${list.length}. So close.</div>`;
+}
+const myBest=a=>rankRuns(savedRuns(a))[0];
+
 function renderBoardFrom(runs){
   const body=$('lbBody');
   const sec=t=>`<h3 class="sec">${t}</h3>`;
@@ -1731,6 +1745,7 @@ function renderBoardFrom(runs){
     const t=rankRuns(runs.filter(h=>h.d===today)).slice(0,10);
     html+=sec(`<span class="ico c f a-cat"></span>Today · Daily #${dayNo(today)}`);
     html+=t.length?t.map((h,i)=>rowHTML(i+1,'run '+(i+1),h,i===0)).join(''):'<div class="empty">No runs today yet.</div>';
+    if(t.length>=10)html+=standing(myBest(dailyRuns().filter(h=>h.d===today)),t,'run today');
     for(let d=1;d<=2;d++){
       const k=shiftDay(today,-d),r=rankRuns(runs.filter(h=>h.d===k)).slice(0,5);
       html+=`<h3 class="sec withbtn">${pretty(k)} · Daily #${dayNo(k)}<button class="playday" data-solve="${k}">Solve</button></h3>`;
@@ -1745,12 +1760,15 @@ function renderBoardFrom(runs){
     html+=r.length?r.map((h,i)=>rowHTML(i+1,pretty(h.d),h,i===0)).join('')
       +`<div class="lb"><span class="rk"></span><span class="when">daily average</span><span class="pt">${avg} left</span></div>`
       :'<div class="empty">Nothing this week yet.</div>';
+    const ws=weekStart(today),we=shiftDay(ws,6);
+    html+=standing(myBest(dailyRuns().filter(h=>h.d>=ws&&h.d<=we)),r,'run this week');
   }else if(tab==='hof'){
     const bestBy={};
     rankRuns(runs).forEach(h=>{const k=who(h);if(!bestBy[k])bestBy[k]=h;});
     const r=rankRuns(Object.values(bestBy)).slice(0,25);
     html+=sec('All time · best per player · top 25');
     html+=r.length?r.map((h,i)=>rowHTML(i+1,pretty(h.d),h,i===0)).join(''):'<div class="empty">Finish a daily run to start the hall of fame.</div>';
+    html+=standing(myBest(dailyRuns()),r,'daily');
   }else{
     const eb={};
     runs.filter(h=>h.m==='endless').sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0))
@@ -1760,6 +1778,8 @@ function renderBoardFrom(runs){
     html+=r.length?r.map((h,i)=>`<div class="lb${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>
       <span class="when">${h.i?`<span class="ini">${h.i}</span>`:''}${pretty(h.d)}${h.ms?' · '+fmt(h.ms):''}</span>
       <span class="pt">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
+    const em=savedRuns(history.filter(h=>h.m==='endless')).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0))[0];
+    html+=standing(em,r,'Unlimited Cat',true);
   }
   body.innerHTML=html;
   body.querySelectorAll('.playday').forEach(b=>b.onclick=()=>{
