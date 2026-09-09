@@ -1567,12 +1567,9 @@ function bestPerPlayer(rows,rank){
   return rank(Object.values(by));
 }
 function placeOf(rows,entry,rank){
+  const ranked=bestPerPlayer(rows,rank);
   const key=who(entry);
-  const merged=bestPerPlayer(
-    rows.filter(h=>who(h)!==key).concat([entry]),
-    rank
-  );
-  const i=merged.findIndex(h=>who(h)===key);
+  const i=ranked.findIndex(h=>who(h)===key);
   return i<0?0:i+1;
 }
 function showHooray(line,sub){
