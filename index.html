@@ -1605,7 +1605,7 @@ async function celebrate(entry){
     const rows=await boardRows('?tab=endless');
     const rk=a=>[...a].sort((x,y)=>(y.s||0)-(x.s||0)||(x.ms||0)-(y.ms||0));
     const L=landing(rows,entry,rk,scoreGap);
-    if(L&&L.on&&L.held)msgs.push([1,'Saved. Your '+ordinal(L.pl)+' place still stands','Your best is '+(L.best.s||0).toLocaleString()+' cats.']);
+    if(L&&L.on&&L.held)msgs.push([1,'Saved — your best still stands',ordinal(L.pl)+' in Unlimited Cat Mode with '+(L.best.s||0).toLocaleString()+' cats.']);
     else if(L&&L.on&&L.pl===1)msgs.push([4,'Top of Unlimited Cat Mode','Nobody has collected more cats.']);
     else if(L&&L.on&&L.pl<=10)msgs.push([3,ordinal(L.pl)+' in Unlimited Cat Mode','Out of every run ever saved.']);
     else if(L&&L.on)msgs.push([2,ordinal(L.pl)+' in Unlimited Cat Mode','On the top 25.']);
@@ -1620,13 +1620,13 @@ async function celebrate(entry){
       boardRows('?tab=week&start='+encodeURIComponent(ws)+'&end='+encodeURIComponent(shiftDay(ws,6)))
     ]);
     const W=landing(week,entry,rankRuns,catGap);
-    if(W&&W.on&&W.held)msgs.push([1,'Saved. Your '+ordinal(W.pl)+' this week still stands','Your best since Monday: '+leftOf(W.best)+' left.']);
+    if(W&&W.on&&W.held)msgs.push([1,'Saved — your best still stands',ordinal(W.pl)+' this week with '+leftOf(W.best)+' left.']);
     else if(W&&W.on&&W.pl===1)msgs.push([4,'Top of the week','Best run anyone has saved since Monday.']);
     else if(W&&W.on&&W.pl<=5)msgs.push([3,ordinal(W.pl)+' this week','On the weekly board.']);
     else if(W&&W.on)msgs.push([2,ordinal(W.pl)+' this week','Top 25 since Monday.']);
     else if(W)msgs.push([1,'Saved — just outside the weekly top 25',behind(W.gap,'cat')+'. Tomorrow is a fresh board.']);
     const H=landing(hof,entry,rankRuns,catGap);
-    if(H&&H.on&&H.held)msgs.push([0,'Saved. Your Hall of Fame '+ordinal(H.pl)+' still stands','Your best ever: '+leftOf(H.best)+' left.']);
+    if(H&&H.on&&H.held)msgs.push([0,'Saved — your best still stands',ordinal(H.pl)+' all time with '+leftOf(H.best)+' left.']);
     else if(H&&H.on&&H.pl===1)msgs.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
     else if(H&&H.on&&H.pl<=3)msgs.push([5,'Hall of Fame — '+ordinal(H.pl),'Top three of all time.']);
     else if(H&&H.on)msgs.push([3,ordinal(H.pl)+' in the Hall of Fame','Top 25 of all time.']);
