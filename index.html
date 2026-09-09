@@ -1567,8 +1567,12 @@ function bestPerPlayer(rows,rank){
   return rank(Object.values(by));
 }
 function placeOf(rows,entry,rank){
-  const merged=bestPerPlayer(rows.filter(h=>h.run_id!==entry.run_id).concat([entry]),rank);
-  const i=merged.findIndex(h=>h.run_id===entry.run_id);
+  const key=who(entry);
+  const merged=bestPerPlayer(
+    rows.filter(h=>who(h)!==key).concat([entry]),
+    rank
+  );
+  const i=merged.findIndex(h=>who(h)===key);
   return i<0?0:i+1;
 }
 function showHooray(line,sub){
@@ -1609,8 +1613,9 @@ async function celebrate(entry){
     if(hof){
       const pl=placeOf(hof,entry,rankRuns);
       if(pl===1)wins.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
-      else if(pl<=3)wins.push([5,'Hall of Fame — '+ordinal(pl),'Top three of all time.']);
-      else if(pl<=25)wins.push([3,ordinal(pl)+' in the Hall of Fame','Top 25 of all time.']);
+      else if(pl>=2 && pl<=3)wins.push([5,'Hall of Fame — '+ordinal(pl),'Top three of all time.']);
+      else if(pl>=4 && pl<=25)wins.push([3,ordinal(pl)+' in the Hall of Fame','Top 25 of all time.']);
+      else wins.push([1,'Not in the Hall of Fame yet','Keep playing — your best run can still climb the board.']);
     }
   }
   if(!wins.length)return;
@@ -1675,7 +1680,6 @@ function record(reason){
   const sv=$('initSave');sv.textContent='Save';sv.classList.remove('done');sv.disabled=false;
   $('saveHint').textContent='Your run is only on the scoreboard once you press Save.';
   $('saveHint').classList.remove('done');
-  const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
   const left=seedsLeft(),loose=tilesOn();
   if(mode==='daily'){showCat($('overCat'),dayNo(playDate));$('overCat').style.display='block';}else $('overCat').style.display='none';
   $('finalScore').textContent=mode==='daily'?String(loose):score.toLocaleString();
@@ -1686,7 +1690,7 @@ function record(reason){
     :(won?`Every cat gone in ${fmt(elapsed)}. A perfect clear.`
         :`${pct}% of the board cleared in ${fmt(elapsed)}.`)
       +` ${score} cats cleared`+(piecesLeft()?`, ${piecesLeft()} piece${piecesLeft()===1?'':'s'} never used.`:', every piece used.')
-      +(rank>0&&rank<=10?` #${rank} all time.`:'');
+      +'.';
   hud();
   setTimeout(()=>{
     $('overSheet').classList.add('show');
@@ -1923,12 +1927,11 @@ async function shareOut(text,btn,box){
 $('shareBtn').onclick=async function(){
   const pct=clearedPct(),n=Math.round(pct/10),left=seedsLeft();
   const bar='🟨'.repeat(n)+'⬜'.repeat(10-n);
-  const rank=rankRuns(dailyRuns()).findIndex(h=>h===lastEntry)+1;
   const loose=tilesOn();
   const line3=pct===100?`Board cleared in ${fmt(elapsed)}`:`${loose} cat${loose===1?'':'s'} left after ${fmt(elapsed)}`;
   const brag=pct===100?'Can you do it faster?':`I got stuck with ${piecesLeft()} pieces to spare. Can you empty it?`;
   const text=`🐱 LUCKY STREAK 好运连连 #${dayNo(playDate)}\n${bar} ${pct}%\n${line3}\n`
-    +(pct<100?`⏱ ${fmt(elapsed)}`:`🧩 ${piecesLeft()} pieces unused`)+(rank>0&&rank<=3?` · #${rank} all time`:'')
+    +(pct<100?`⏱ ${fmt(elapsed)}`:`🧩 ${piecesLeft()} pieces unused`)
     +`\n${brag}`+(SHARE_URL?`\n${SHARE_URL}`:'');
   shareOut(text,this,$('shareBox'));
 };
