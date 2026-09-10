@@ -466,7 +466,7 @@
   <h2 class="brush" style="margin-bottom:2px">Scores</h2>
   <p id="resetNote" style="margin:0 0 2px;font-size:12.5px">New puzzle in —</p>
   <div class="tabs">
-    <button class="tab on" data-tab="day"><span class="ico c f a-cat"></span>Today</button>
+    <button class="tab on" data-tab="day"><span class="ico c f a-cat"></span>Daily</button>
     <button class="tab" data-tab="week"><span class="ico c f a-bear"></span>Weekly</button>
     <button class="tab" data-tab="hof"><span class="ico c f a-orca"></span>All time</button>
     <button class="tab" data-tab="endless"><span class="ico c f a-cat"></span><span class="inf" aria-hidden="true">∞</span>Cats</button>
@@ -1758,8 +1758,8 @@ function stampAt(h){
   if((!d||isNaN(d))&&h.t)d=new Date(h.t);
   if(!d||isNaN(d))return stamp(h.d);
   const hr=d.getHours();
-  return DAYS[d.getDay()]+' '+two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
-    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?' AM':' PM');
+  return two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
+    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM');
 }
 function stampAtUnlimited(h){
   const raw=h.created_at?String(h.created_at).replace(' ','T')+'Z':null;
@@ -1768,11 +1768,11 @@ function stampAtUnlimited(h){
   if(!d||isNaN(d))return stamp(h.d).replace(/^[A-Za-z]{3} /,'');
   const hr=d.getHours();
   return two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
-    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?' AM':' PM');
+    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM');
 }
 /* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
    The CLEAR badge is gone — a red 100% says the same thing in a third of the width. */
-const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span>saved</span>'
+const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span></span>'
   +'<span>time</span><span>clear</span>'
   +'<span class="hcat">#<span class="ico c f a-cat"></span></span>'
   +'<span class="htls">🧩</span></div>';
