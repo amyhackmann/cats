@@ -99,7 +99,7 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY d
               ORDER BY b ASC, ms ASC, s DESC, tl DESC
@@ -109,7 +109,7 @@ export async function onRequestGet({ request, env }) {
             AND d BETWEEN ? AND ?
         )
         SELECT
-          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn <= CASE WHEN d = ? THEN 10 ELSE 5 END
         ORDER BY d DESC, b ASC, ms ASC, s DESC, tl DESC
@@ -132,7 +132,7 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
               ORDER BY b ASC, ms ASC, s DESC, tl DESC
@@ -142,7 +142,7 @@ export async function onRequestGet({ request, env }) {
             AND d BETWEEN ? AND ?
         )
         SELECT
-          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn = 1
         ORDER BY b ASC, ms ASC, s DESC, tl DESC
@@ -153,7 +153,7 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
               ORDER BY b ASC, ms ASC, s DESC, tl DESC
@@ -162,7 +162,7 @@ export async function onRequestGet({ request, env }) {
           WHERE m = 'daily'
         )
         SELECT
-          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn = 1
         ORDER BY b ASC, ms ASC, s DESC, tl DESC
@@ -173,7 +173,7 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
               ORDER BY s DESC, ms ASC
@@ -182,7 +182,7 @@ export async function onRequestGet({ request, env }) {
           WHERE m = 'endless'
         )
         SELECT
-          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn = 1
         ORDER BY s DESC, ms ASC
