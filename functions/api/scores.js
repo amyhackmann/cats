@@ -102,7 +102,7 @@ export async function onRequestGet({ request, env }) {
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY d
-              ORDER BY b ASC, ms ASC, s DESC, tl DESC
+              ORDER BY p DESC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
@@ -112,7 +112,7 @@ export async function onRequestGet({ request, env }) {
           run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn <= CASE WHEN d = ? THEN 10 ELSE 5 END
-        ORDER BY d DESC, b ASC, ms ASC, s DESC, tl DESC
+        ORDER BY d DESC, p DESC, ms ASC, s DESC, tl DESC
       `).bind(start, end, end).all();
 
     } else if (tab === "week") {
@@ -135,7 +135,7 @@ export async function onRequestGet({ request, env }) {
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
-              ORDER BY b ASC, ms ASC, s DESC, tl DESC
+              ORDER BY p DESC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
@@ -145,7 +145,7 @@ export async function onRequestGet({ request, env }) {
           run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn = 1
-        ORDER BY b ASC, ms ASC, s DESC, tl DESC
+        ORDER BY p DESC, ms ASC, s DESC, tl DESC
         LIMIT 25
       `).bind(start, end).all();
 
@@ -156,7 +156,7 @@ export async function onRequestGet({ request, env }) {
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
-              ORDER BY b ASC, ms ASC, s DESC, tl DESC
+              ORDER BY p DESC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
@@ -165,7 +165,7 @@ export async function onRequestGet({ request, env }) {
           run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at
         FROM ranked
         WHERE rn = 1
-        ORDER BY b ASC, ms ASC, s DESC, tl DESC
+        ORDER BY p DESC, ms ASC, s DESC, tl DESC
         LIMIT 25
       `).all();
 
