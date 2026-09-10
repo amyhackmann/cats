@@ -216,18 +216,19 @@
   .tab{flex:1;padding:8px 2px;font-size:12.5px;font-weight:600;border-radius:10px;border:1px solid var(--edge);background:transparent;white-space:nowrap;
     color:var(--dim);font-family:'LS Text','LS Text','Nunito',system-ui,sans-serif;cursor:pointer}
   .tab.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
-  .lbgrid{display:grid;grid-template-columns:2.2ch 18px 3.6ch minmax(0,1fr) 4.6ch 4.3ch 3.6ch 3ch;
-    align-items:center;column-gap:0}
-  .lb{padding:6px 2px;border-bottom:1px solid var(--edge);
-    font-size:clamp(9.6px,2.85vw,12.5px);white-space:nowrap}
+  .lbgrid{display:grid;grid-template-columns:2.4ch 18px 3.8ch minmax(0,1fr) 5ch 5ch 4.2ch 3.4ch;
+    align-items:center;column-gap:clamp(4px,1.6vw,9px)}
+  .lb{padding:7px 2px;border-bottom:1px solid var(--edge);
+    font-size:clamp(9.6px,2.7vw,12px);white-space:nowrap}
   .lb .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .lb .tm{color:var(--text);padding-left:6px}
+  .lb .tm{color:var(--text)}
   .lb .pct{font-weight:700}
   .lb.clear .pct{color:var(--red)}
   .lb .cats,.lb .tls{color:var(--dim)}
-  .lbhead{padding:1px 2px 4px;font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  .lbhead{padding:2px 2px 5px;font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
   .lbhead span{text-align:right;white-space:nowrap;overflow:visible}
-  .lbhead .hcat,.lbhead .htls{font-size:11px;letter-spacing:0}
+  .lbhead .hcat,.lbhead .htls{font-size:10.5px;letter-spacing:0}
+  .lbhead .ico{width:13px;height:13px;margin:0 0 0 1px;vertical-align:-2px}
   .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
   .lb.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch auto}
   .lb:last-child{border-bottom:0}
@@ -242,8 +243,8 @@
   .tab.on .inf{color:#F8DA7A}
   .tab{padding-left:4px;padding-right:4px;overflow:visible}
   .tab{display:inline-flex;align-items:center;justify-content:center;gap:2px}
-  .lb .when{color:var(--dim);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;padding-left:4px}
-  .lb .ini{font-weight:700;color:var(--text);letter-spacing:.04em;white-space:nowrap;padding-left:3px}
+  .lb .when{color:var(--dim);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+  .lb .ini{font-weight:700;color:var(--text);letter-spacing:.04em;white-space:nowrap}
   .lb .pt{font-weight:700;font-variant-numeric:tabular-nums}
   .lb .pt{font-variant-numeric:tabular-nums;white-space:nowrap}
   .lb.top .pt{color:var(--red)}
@@ -1762,7 +1763,9 @@ function stampAt(h){
 /* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
    The CLEAR badge is gone — a red 100% says the same thing in a third of the width. */
 const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span>saved</span>'
-  +'<span>time</span><span>clear</span><span class="hcat">🐱</span><span class="htls">🧩</span></div>';
+  +'<span>time</span><span>clear</span>'
+  +'<span class="hcat">#<span class="ico c f a-cat"></span></span>'
+  +'<span class="htls">🧩</span></div>';
 function rowHTML(rank,_label,h,top){
   const ico=RANKCAT[rank-1]||'a-bear';
   const mine=playerId&&h.pid===playerId?' mine':'';
