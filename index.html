@@ -219,8 +219,7 @@
   .lbgrid{--f:clamp(9.6px,2.7vw,12px);--c:calc(var(--f)*.6);
     display:grid;column-gap:clamp(3px,1.1vw,7px);align-items:center;
     grid-template-columns:calc(var(--c)*2.2) 20px calc(var(--c)*5.9) minmax(0,1fr)
-      calc(var(--c)*4.6) calc(var(--c)*4.7) calc(var(--c)*3.2) calc(var(--c)*3.1)}
-  .lb .sub{font-style:normal;font-size:.82em;opacity:.72;margin-left:.32em}
+      calc(var(--c)*4.6) calc(var(--c)*4.7) calc(var(--c)*3.9) calc(var(--c)*3.1)}
   .lb .ico{margin-right:0}
   .lb .ini,.lb .when,.lb .num{min-width:0;overflow:hidden}
   .lb{padding:7px 2px;border-bottom:1px solid var(--edge);
@@ -233,7 +232,7 @@
   .lbhead{padding:2px 2px 5px;font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
   .lbhead span{text-align:right;white-space:nowrap;overflow:visible}
   .lbhead .hcat,.lbhead .htls{font-size:10.5px;letter-spacing:0}
-  .lbhead .ico{width:13px;height:13px;margin:0 0 0 1px;vertical-align:-2px}
+  .lbhead .ico{display:inline-block;width:14px;height:14px;margin:0 0 0 2px;vertical-align:-3px}
   .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
   .lbgrid.lbhead.uni,.lbgrid.uni{grid-template-columns:calc(var(--c)*2.2) calc(var(--c)*5.9)
     minmax(0,1fr) calc(var(--c)*4.6) calc(var(--c)*5.8)}
@@ -1760,14 +1759,11 @@ const RANKCAT=['a-cat','a-orca','a-fox'];                      // gold, silver, 
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const two=n=>String(n).padStart(2,'0');
-/* When the run was saved, in the reader's own clock. No zone label: it is the same on
-   every row, and CLDR only has letter abbreviations for some zones anyway. The board
-   still rolls over at midnight AEST, so this date can trail the puzzle date it sits under. */
-const dayTag=d=>{const hr=d.getHours();
-  return two(d.getDate())+MON[d.getMonth()]+String(d.getFullYear()).slice(-2)
-    +'<i class="sub">'+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM')+'</i>';};
+/* The day the run was saved, in the reader's own zone. No clock and no zone label: the
+   board rolls over at midnight AEST, so this can trail the puzzle date it sits under. */
+const dayTag=d=>DAYS[d.getDay()]+' '+two(d.getDate())+MON[d.getMonth()]+String(d.getFullYear()).slice(-2);
 const stamp=k=>{const d=new Date(k+'T00:00:00Z');
-  return DAYS[d.getUTCDay()]+' '+two(d.getUTCDate())+' '+MON[d.getUTCMonth()]+' '+String(d.getUTCFullYear()).slice(-2);};
+  return DAYS[d.getUTCDay()]+' '+two(d.getUTCDate())+MON[d.getUTCMonth()]+String(d.getUTCFullYear()).slice(-2);};
 /* When the run was saved, in the reader's own timezone. D1 stores created_at as
    UTC with a space instead of a T, which Safari will not parse; local rows fall
    back to h.t, and anything older than both degrades to the puzzle date alone. */
@@ -1782,7 +1778,7 @@ function stampAtUnlimited(h){
   const raw=h.created_at?String(h.created_at).replace(' ','T')+'Z':null;
   let d=raw?new Date(raw):null;
   if((!d||isNaN(d))&&h.t)d=new Date(h.t);
-  if(!d||isNaN(d))return stamp(h.d).replace(/^[A-Za-z]{3} /,'');
+  if(!d||isNaN(d))return stamp(h.d);
   return dayTag(d);
 }
 /* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
