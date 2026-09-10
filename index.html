@@ -216,9 +216,19 @@
   .tab{flex:1;padding:8px 2px;font-size:12.5px;font-weight:600;border-radius:10px;border:1px solid var(--edge);background:transparent;white-space:nowrap;
     color:var(--dim);font-family:'LS Text','LS Text','Nunito',system-ui,sans-serif;cursor:pointer}
   .tab.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
-  .lb{display:flex;justify-content:space-between;gap:8px;padding:5px 2px;border-bottom:1px solid var(--edge);font-size:13.5px}
+  .lb{display:grid;grid-template-columns:17px 20px 3.4ch 7.6ch minmax(0,1fr) 4.3ch 3.8ch 3.4ch;
+    align-items:center;gap:4px;padding:5px 2px;border-bottom:1px solid var(--edge);font-size:12.5px}
+  .lb .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .lb .pct{font-weight:700}
+  .lb.clear .pct{color:var(--red)}
+  .lb .cats,.lb .tls{color:var(--dim)}
+  .lbhead{display:grid;grid-template-columns:17px 20px 3.4ch 7.6ch minmax(0,1fr) 4.3ch 3.8ch 3.4ch;
+    align-items:center;gap:4px;padding:0 2px 3px;font-size:10.5px;color:var(--dim);letter-spacing:.02em}
+  .lbhead span{text-align:right;white-space:nowrap}
+  .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+  .lb.uni{grid-template-columns:17px 3.4ch 7.6ch minmax(0,1fr) auto}
   .lb:last-child{border-bottom:0}
-  .lb .rk{color:var(--dim);width:22px;flex:none}
+  .lb .rk{color:var(--dim);flex:none}
   .lb .ico,.tab .ico,h3.sec .ico{display:inline-block;width:20px;height:20px;position:relative;vertical-align:-5px;margin-right:6px;flex:none}
   .tab .ico{width:16px;height:16px;margin-right:4px;vertical-align:-4px;flex:none}
   .tab .inf{font-size:16px;font-weight:800;line-height:1;margin-right:4px;flex:none;color:var(--coral)}
@@ -229,8 +239,8 @@
   .tab.on .inf{color:#F8DA7A}
   .tab{padding-left:4px;padding-right:4px;overflow:visible}
   .tab{display:inline-flex;align-items:center;justify-content:center;gap:2px}
-  .lb .when{color:var(--dim);flex:1;font-size:13px}
-  .lb .ini{font-weight:700;color:var(--text);margin-right:6px}
+  .lb .when{color:var(--dim);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb .ini{font-weight:700;color:var(--text)}
   .lb .pt{font-weight:700;font-variant-numeric:tabular-nums}
   .lb .pt{font-variant-numeric:tabular-nums;white-space:nowrap}
   .lb.top .pt{color:var(--red)}
@@ -326,7 +336,7 @@
     .seal{width:24px;height:24px;font-size:15px;right:12px;bottom:10px}
     .hero{width:112px;height:112px}
     .wordmark{max-width:230px}.wordzh{max-width:104px}
-    .lb{padding:4px 2px;font-size:12.5px}
+    .lb{padding:4px 2px;font-size:11.8px;gap:3px}
     .initrow{margin:10px 0 2px}
     .initrow input{padding:8px 0;font-size:21px;width:104px}
   }
@@ -396,7 +406,7 @@
 
   <div class="mode">
     <div class="modehead">Daily Mode</div>
-    <p class="goal"><b>Empty the board.</b> Ranked by <b>fewest cats left</b>, then by time.</p>
+    <p class="goal"><b>Empty the board.</b> Ranked by <b>fewest cats left</b>, then time, then most cats cleared, then most tiles never played.</p>
     <div class="row"><span class="glyph c f a-cat"></span><span><b>Drag</b> pieces from the tray onto the grid.</span></div>
     <div class="row"><span class="glyph c f a-bear"></span><span><b>Three of a kind</b> touching clear. So does a full row or column.</span></div>
     <div class="row"><span class="glyph c f a-fox"></span><span><b>Every cat counts</b>, yours too. It ends when the board's empty, the pieces run out, or nothing fits.</span></div>
@@ -734,6 +744,10 @@ function refill(){
   topUp();
 }
 const piecesLeft=()=>queue.length+tray.filter(Boolean).length;
+/* Tiles the deck still owes you, counted in cells: an unplayed L-piece is 3, not 1.
+   Only ever above zero on a clear — a loss ends because the deck ran dry or nothing fit. */
+const cellsOf=p=>p&&p.cells?p.cells.length:0;
+const tilesInDeck=()=>queue.reduce((n,p)=>n+cellsOf(p),0)+tray.reduce((n,p)=>n+cellsOf(p),0);
 
 function pieceNode(p,sz,art){
   if(art===undefined)art=sz>=11;
@@ -1523,7 +1537,7 @@ function runId(){
 function safeRow(h){
   return {
     run_id:h.run_id||null,d:h.d||today,p:h.p??null,b:h.b??null,s:Number(h.s)||0,
-    l:h.l??null,x:h.x??null,ms:h.ms??null,i:(h.i||'AAA').toUpperCase(),
+    l:h.l??null,x:h.x??null,tl:h.tl??null,ms:h.ms??null,i:(h.i||'AAA').toUpperCase(),
     w:h.w?1:0,m:h.m||'daily',t:h.t||Date.now(),pid:h.pid||playerId||''
   };
 }
@@ -1664,7 +1678,8 @@ function syncToday(){                       // AEST day can roll over while the 
   for(const el of [$('barCat')])if(el&&mode!=='daily')showCat(el,dayNo(today));
   return true;
 }
-const rankRuns=a=>[...a].sort((x,y)=>leftOf(x)-leftOf(y)||(x.ms||0)-(y.ms||0)||y.s-x.s);   // fewest left, then time, then cats cleared
+const tilesOf=h=>h.tl??-1;                               // rows saved before tl existed rank last on it
+const rankRuns=a=>[...a].sort((x,y)=>leftOf(x)-leftOf(y)||(x.ms||0)-(y.ms||0)||(y.s||0)-(x.s||0)||tilesOf(y)-tilesOf(x));
 
 function record(reason){
   syncToday();
@@ -1684,7 +1699,7 @@ function record(reason){
     if(recorded&&lastEntry)Object.assign(lastEntry,row);else{lastEntry=row;history.push(row);}
     saveHistory();   // local only — nothing goes to the scoreboard until Save is pressed
   }else{
-    const row={run_id:runId(),d:playDate,p:pct,b:tilesOn(),s:score,l:lines,x:matched,ms:elapsed,i:initials,w:won?1:0,m:'daily',t:Date.now(),sv:0,pid:playerId};
+    const row={run_id:runId(),d:playDate,p:pct,b:tilesOn(),s:score,l:lines,x:matched,tl:tilesInDeck(),ms:elapsed,i:initials,w:won?1:0,m:'daily',t:Date.now(),sv:0,pid:playerId};
     if(recorded&&lastEntry)Object.assign(lastEntry,row);else{lastEntry=row;history.push(row);}
     saveHistory();   // local only — nothing goes to the scoreboard until Save is pressed
   }
@@ -1724,12 +1739,23 @@ function record(reason){
 
 let tab='day';
 const RANKCAT=['a-cat','a-orca','a-fox'];                      // gold, silver, bronze-ish tabby; teal for the rest
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const stamp=k=>{const d=new Date(k+'T00:00:00Z');
+  return d.getUTCDate()+MON[d.getUTCMonth()]+"'"+String(d.getUTCFullYear()).slice(-2);};
+/* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
+   The CLEAR badge is gone — a red 100% says the same thing in a third of the width. */
+const LBHEAD='<div class="lbhead"><span></span><span></span><span></span><span></span>'
+  +'<span>time</span><span>clear</span><span>🐱</span><span>🧩</span></div>';
 function rowHTML(rank,label,h,top){
   const ico=RANKCAT[rank-1]||'a-bear';
   const mine=playerId&&h.pid===playerId?' mine':'';
-  return `<div class="lb${top?' top':''}${mine}"><span class="rk">${rank}</span><span class="ico c f ${ico}"></span>
-    <span class="when">${h.i?`<span class="ini">${h.i}</span>`:''}${label}${h.ms?' · '+fmt(h.ms):''} · ${pctOf(h)}%</span>
-    <span class="pt">${leftOf(h)===0?'CLEAR':leftOf(h)+' left'}</span></div>`;
+  const done=leftOf(h)===0?' clear':'';
+  return `<div class="lb${top?' top':''}${mine}${done}"><span class="rk">${rank}</span><span class="ico c f ${ico}"></span>`
+    +`<span class="ini">${h.i||''}</span><span class="when">${label}</span>`
+    +`<span class="num tm">${h.ms?fmt(h.ms):'—'}</span>`
+    +`<span class="num pct">${pctOf(h)}%</span>`
+    +`<span class="num cats">${h.s||0}</span>`
+    +`<span class="num tls">${h.tl??'–'}</span></div>`;
 }
 function renderBoard(){
   syncToday();
@@ -1767,12 +1793,12 @@ function renderBoardFrom(runs){
   if(tab==='day'){
     const t=rankRuns(runs.filter(h=>h.d===today)).slice(0,10);
     html+=sec(`<span class="ico c f a-cat"></span>Today · Daily #${dayNo(today)}`);
-    html+=t.length?t.map((h,i)=>rowHTML(i+1,'run '+(i+1),h,i===0)).join(''):'<div class="empty">No runs today yet.</div>';
+    html+=t.length?LBHEAD+t.map((h,i)=>rowHTML(i+1,stamp(h.d),h,i===0)).join(''):'<div class="empty">No runs today yet.</div>';
     if(t.length>=10)html+=standing(myBest(dailyRuns().filter(h=>h.d===today)),t,'run today');
     for(let d=1;d<=2;d++){
       const k=shiftDay(today,-d),r=rankRuns(runs.filter(h=>h.d===k)).slice(0,5);
       html+=`<h3 class="sec withbtn">${pretty(k)} · Daily #${dayNo(k)}<button class="playday" data-solve="${k}">Solve</button></h3>`;
-      html+=r.length?r.map((h,i)=>rowHTML(i+1,'run '+(i+1),h,i===0)).join(''):'<div class="empty">Not played yet.</div>';
+      html+=r.length?LBHEAD+r.map((h,i)=>rowHTML(i+1,stamp(h.d),h,i===0)).join(''):'<div class="empty">Not played yet.</div>';
     }
   }else if(tab==='week'){
     const wb={};
@@ -1780,8 +1806,8 @@ function renderBoardFrom(runs){
     const r=rankRuns(Object.values(wb)).slice(0,25),days=[...new Set(runs.map(h=>h.d))];
     const avg=days.length?(days.reduce((a,d)=>a+leftOf(rankRuns(runs.filter(h=>h.d===d))[0]),0)/days.length).toFixed(1):0;
     html+=sec(`Week of ${pretty(weekStart(today))} · best per player · top 25`);
-    html+=r.length?r.map((h,i)=>rowHTML(i+1,pretty(h.d),h,i===0)).join('')
-      +`<div class="lb"><span class="rk"></span><span class="when">daily average</span><span class="pt">${avg} left</span></div>`
+    html+=r.length?LBHEAD+r.map((h,i)=>rowHTML(i+1,stamp(h.d),h,i===0)).join('')
+      +`<div class="lb note"><span class="when">daily average</span><span class="pt">${avg} left</span></div>`
       :'<div class="empty">Nothing this week yet.</div>';
     const ws=weekStart(today),we=shiftDay(ws,6);
     html+=standing(myBest(dailyRuns().filter(h=>h.d>=ws&&h.d<=we)),r,'run this week');
@@ -1790,7 +1816,7 @@ function renderBoardFrom(runs){
     rankRuns(runs).forEach(h=>{const k=who(h);if(!bestBy[k])bestBy[k]=h;});
     const r=rankRuns(Object.values(bestBy)).slice(0,25);
     html+=sec('All time · best per player · top 25');
-    html+=r.length?r.map((h,i)=>rowHTML(i+1,pretty(h.d),h,i===0)).join(''):'<div class="empty">Finish a daily run to start the hall of fame.</div>';
+    html+=r.length?LBHEAD+r.map((h,i)=>rowHTML(i+1,stamp(h.d),h,i===0)).join(''):'<div class="empty">Finish a daily run to start the hall of fame.</div>';
     html+=standing(myBest(dailyRuns()),r,'daily');
   }else{
     const eb={};
@@ -1798,9 +1824,10 @@ function renderBoardFrom(runs){
       .forEach(h=>{const k=who(h);if(!eb[k])eb[k]=h;});
     const r=Object.values(eb).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0)).slice(0,25);
     html+=sec('Unlimited Cat Mode · most cats · top 25');
-    html+=r.length?r.map((h,i)=>`<div class="lb${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>
-      <span class="when">${h.i?`<span class="ini">${h.i}</span>`:''}${pretty(h.d)}${h.ms?' · '+fmt(h.ms):''}</span>
-      <span class="pt">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
+    html+=r.length?r.map((h,i)=>`<div class="lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
+      +`<span class="ini">${h.i||''}</span><span class="when">${stamp(h.d)}</span>`
+      +`<span class="num tm">${h.ms?fmt(h.ms):'—'}</span>`
+      +`<span class="pt num">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
     const em=savedRuns(history.filter(h=>h.m==='endless')).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0))[0];
     html+=standing(em,r,'Unlimited Cat',true);
   }

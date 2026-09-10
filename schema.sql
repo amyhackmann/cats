@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS scores (
   s INTEGER NOT NULL DEFAULT 0,
   l INTEGER,
   x INTEGER,
+  tl INTEGER,
   ms INTEGER,
   i TEXT NOT NULL,
   w INTEGER NOT NULL DEFAULT 0,
@@ -15,10 +16,10 @@ CREATE TABLE IF NOT EXISTS scores (
 );
 
 CREATE INDEX IF NOT EXISTS idx_scores_daily_date
-  ON scores(m, d, b, ms, s);
+  ON scores(m, d, b, ms, s, tl);
 
 CREATE INDEX IF NOT EXISTS idx_scores_daily_player
-  ON scores(m, i, b, ms, s);
+  ON scores(m, i, b, ms, s, tl);
 
 CREATE INDEX IF NOT EXISTS idx_scores_endless_player
   ON scores(m, i, s, ms);
@@ -26,4 +27,4 @@ CREATE INDEX IF NOT EXISTS idx_scores_endless_player
 -- Dedupe key for Weekly, Hall of Fame and Unlimited: the device's player id,
 -- falling back to initials for rows saved before pid existed.
 CREATE INDEX IF NOT EXISTS idx_scores_pid
-  ON scores(m, pid, b, ms, s);
+  ON scores(m, pid, b, ms, s, tl);
