@@ -230,6 +230,7 @@
   .lbhead .hcat,.lbhead .htls{font-size:10.5px;letter-spacing:0}
   .lbhead .ico{width:13px;height:13px;margin:0 0 0 1px;vertical-align:-2px}
   .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
+  .lbgrid.lbhead.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch 5ch}
   .lbgrid.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch 5ch}
   .lb:last-child{border-bottom:0}
   .lb .rk{color:var(--dim);flex:none}
@@ -1760,6 +1761,15 @@ function stampAt(h){
   return DAYS[d.getDay()]+' '+two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
     +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?' AM':' PM');
 }
+function stampAtUnlimited(h){
+  const raw=h.created_at?String(h.created_at).replace(' ','T')+'Z':null;
+  let d=raw?new Date(raw):null;
+  if((!d||isNaN(d))&&h.t)d=new Date(h.t);
+  if(!d||isNaN(d))return stamp(h.d).replace(/^[A-Za-z]{3} /,'');
+  const hr=d.getHours();
+  return two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
+    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?' AM':' PM');
+}
 /* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
    The CLEAR badge is gone — a red 100% says the same thing in a third of the width. */
 const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span>saved</span>'
@@ -1844,11 +1854,11 @@ function renderBoardFrom(runs){
       .forEach(h=>{const k=who(h);if(!eb[k])eb[k]=h;});
     const r=Object.values(eb).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0)).slice(0,25);
     html+=sec('Unlimited Cat Mode · most cats · top 25');
-    const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span>saved</span>'
+    const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span></span>'
       +'<span>time</span>'
       +'<span class="hcat">#<span class="ico c f a-cat"></span></span></div>';
     html+=r.length?UNILBHEAD+r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
-      +`<span class="ini">${h.i||''}</span><span class="when">${stampAt(h)}</span>`
+      +`<span class="ini">${h.i||''}</span><span class="when">${stampAtUnlimited(h)}</span>`
       +`<span class="num tm">${h.ms?fmt(h.ms):'—'}</span>`
       +`<span class="pt num">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
     const em=savedRuns(history.filter(h=>h.m==='endless')).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0))[0];
