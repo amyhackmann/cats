@@ -220,7 +220,7 @@
     display:grid;column-gap:clamp(3px,1.1vw,7px);align-items:center;
     grid-template-columns:calc(var(--c)*2.2) 20px calc(var(--c)*5.9) minmax(0,1fr)
       calc(var(--c)*4.6) calc(var(--c)*4.7) calc(var(--c)*3.2) calc(var(--c)*3.1)}
-  .lb .tz{font-style:normal;font-size:.82em;opacity:.72;margin-left:.32em}
+  .lb .sub{font-style:normal;font-size:.82em;opacity:.72;margin-left:.32em}
   .lb .ico{margin-right:0}
   .lb .ini,.lb .when,.lb .num{min-width:0;overflow:hidden}
   .lb{padding:7px 2px;border-bottom:1px solid var(--edge);
@@ -1760,17 +1760,12 @@ const RANKCAT=['a-cat','a-orca','a-fox'];                      // gold, silver, 
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const two=n=>String(n).padStart(2,'0');
-/* A saved run is stamped in the reader's own zone, so the row has to say which zone
-   that is. Prefer the alphabetic abbreviation (PDT, AEST); fall back to a compact
-   offset (+10, +5:30) in locales that don't have one. */
-const TZ=(()=>{try{
-  const v=new Intl.DateTimeFormat(undefined,{timeZoneName:'short'})
-    .formatToParts(new Date()).find(x=>x.type==='timeZoneName').value;
-  const m=/^(?:GMT|UTC)([+-].+)$/.exec(v);
-  return (m?m[1]:v).replace(/\s/g,'');
-}catch(e){return'';}})();
-const dayTag=d=>two(d.getDate())+MON[d.getMonth()]+String(d.getFullYear()).slice(-2)
-  +(TZ?'<i class="tz">'+TZ+'</i>':'');
+/* When the run was saved, in the reader's own clock. No zone label: it is the same on
+   every row, and CLDR only has letter abbreviations for some zones anyway. The board
+   still rolls over at midnight AEST, so this date can trail the puzzle date it sits under. */
+const dayTag=d=>{const hr=d.getHours();
+  return two(d.getDate())+MON[d.getMonth()]+String(d.getFullYear()).slice(-2)
+    +'<i class="sub">'+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM')+'</i>';};
 const stamp=k=>{const d=new Date(k+'T00:00:00Z');
   return DAYS[d.getUTCDay()]+' '+two(d.getUTCDate())+' '+MON[d.getUTCMonth()]+' '+String(d.getUTCFullYear()).slice(-2);};
 /* When the run was saved, in the reader's own timezone. D1 stores created_at as
