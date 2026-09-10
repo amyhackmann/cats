@@ -216,10 +216,15 @@
   .tab{flex:1;padding:8px 2px;font-size:12.5px;font-weight:600;border-radius:10px;border:1px solid var(--edge);background:transparent;white-space:nowrap;
     color:var(--dim);font-family:'LS Text','LS Text','Nunito',system-ui,sans-serif;cursor:pointer}
   .tab.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
-  .lbgrid{display:grid;grid-template-columns:2.4ch 18px 3.8ch minmax(0,1fr) 5ch 5ch 4.2ch 3.4ch;
-    align-items:center;column-gap:clamp(4px,1.6vw,9px)}
+  .lbgrid{--f:clamp(9.6px,2.7vw,12px);--c:calc(var(--f)*.6);
+    display:grid;column-gap:clamp(3px,1.1vw,7px);align-items:center;
+    grid-template-columns:calc(var(--c)*2.2) 20px calc(var(--c)*5.9) minmax(0,1fr)
+      calc(var(--c)*4.6) calc(var(--c)*4.7) calc(var(--c)*3.2) calc(var(--c)*3.1)}
+  .lb .tz{font-style:normal;font-size:.82em;opacity:.72;margin-left:.32em}
+  .lb .ico{margin-right:0}
+  .lb .ini,.lb .when,.lb .num{min-width:0;overflow:hidden}
   .lb{padding:7px 2px;border-bottom:1px solid var(--edge);
-    font-size:clamp(9.6px,2.7vw,12px);white-space:nowrap}
+    font-size:var(--f);white-space:nowrap}
   .lb .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .lb .tm{color:var(--text)}
   .lb .pct{font-weight:700}
@@ -230,8 +235,8 @@
   .lbhead .hcat,.lbhead .htls{font-size:10.5px;letter-spacing:0}
   .lbhead .ico{width:13px;height:13px;margin:0 0 0 1px;vertical-align:-2px}
   .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
-  .lbgrid.lbhead.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch 5ch}
-  .lbgrid.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch 5ch}
+  .lbgrid.lbhead.uni,.lbgrid.uni{grid-template-columns:calc(var(--c)*2.2) calc(var(--c)*5.9)
+    minmax(0,1fr) calc(var(--c)*4.6) calc(var(--c)*5.8)}
   .lb:last-child{border-bottom:0}
   .lb .rk{color:var(--dim);flex:none}
   .lb .ico,.tab .ico,h3.sec .ico{display:inline-block;width:20px;height:20px;position:relative;vertical-align:-5px;margin-right:6px;flex:none}
@@ -557,7 +562,7 @@ function weekStart(k){const d=new Date(k+'T00:00:00Z'),off=(d.getUTCDay()+6)%7;
   return new Date(d.getTime()-off*MS).toISOString().slice(0,10);}
 function untilReset(){const n=aestNow(),ms=MS-(n.getTime()%MS);
   const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return h>0?`${h}h ${m}m`:`${m}m`;}
-const pretty=k=>new Date(k+'T00:00:00Z').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+const pretty=k=>new Date(k+'T00:00:00Z').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
 
 /* ---------- seeded randomness ---------- */
 function hash(str){let h=1779033703^str.length;
@@ -850,7 +855,12 @@ if(window.visualViewport)window.visualViewport.addEventListener('resize',size);
 
 /* ---------- placement rules ---------- */
 function fits(p,r0,c0){
-  if(p.special==='bomb'||p.special==='bolt')return r0>=0&&c0>=0&&r0<N&&c0<N;
+  /* A charm may only land where it would actually clear something. An empty cross or
+     3x3 used to be a legal drop that ate the tile with no burst, sound or score. */
+  if(p.special==='bomb'||p.special==='bolt'){
+    if(!(r0>=0&&c0>=0&&r0<N&&c0<N))return false;
+    return (p.special==='bomb'?blast:cross)(r0,c0).some(([r,c])=>board[idx(r,c)]);
+  }
   return p.cells.every(([r,c])=>{const r2=r0+r,c2=c0+c;return r2>=0&&c2>=0&&r2<N&&c2<N&&!board[idx(r2,c2)];});
 }
 function anyFit(p){for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fits(p,r,c))return true;return false;}
@@ -860,7 +870,7 @@ const cross=(r,c)=>{const o=[];for(let i=0;i<N;i++){o.push([r,i]);o.push([i,c])}
 /* ---------- dragging: lift, weighted follow, tilt ---------- */
 let drag=null,hi=[];
 function onGrab(e,slot,p){
-  if(!alive||demo)return;
+  if(!alive||demo||busy)return;          // a clear is still animating; the board is about to change
   unlock();
   e.preventDefault();
   const[h,w]=dims(p);
@@ -1050,7 +1060,7 @@ function groupPass(gained,r0,c0,total,cleared){
 function settle(gained,r0,c0,total,cleared,biggest){
   if(!cleared){combo=0;melodyPos=0;}          // a placement that clears nothing ends the tune
   comboBumped=false;
-  if(mode==='daily'&&charge>=CHARGE_NEED){charge-=CHARGE_NEED;queue.unshift(powerPiece());setTimeout(()=>{popText(queue[0]&&queue[0].special==='bomb'?'Fortune cookie added!':'Red packet added!');SFX.power();},200);}
+  if(mode==='daily'&&charge>=CHARGE_NEED){charge-=CHARGE_NEED;const pp=powerPiece();queue.unshift(pp);setTimeout(()=>{popText(pp.special==='bomb'?'Fortune cookie added!':'Red packet added!');SFX.power();},200);}
   score+=gained;
   refill();drawBoard();drawTray();renderNext();hud();
   if(cleared){
@@ -1249,7 +1259,10 @@ function simResolve(b){                       // same two passes the real board 
   return kill.size+k2.size;
 }
 function simFits(b,p,r0,c0){
-  if(p.special)return r0>=0&&c0>=0&&r0<N&&c0<N;
+  if(p.special){
+    if(!(r0>=0&&c0>=0&&r0<N&&c0<N))return false;
+    return (p.special==='bomb'?blast:cross)(r0,c0).some(([r,c])=>b[idx(r,c)]);
+  }
   return p.cells.every(([r,c])=>{const r2=r0+r,c2=c0+c;return r2>=0&&c2>=0&&r2<N&&c2<N&&!b[idx(r2,c2)];});
 }
 function simApply(b,p,r0,c0){
@@ -1747,6 +1760,17 @@ const RANKCAT=['a-cat','a-orca','a-fox'];                      // gold, silver, 
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const two=n=>String(n).padStart(2,'0');
+/* A saved run is stamped in the reader's own zone, so the row has to say which zone
+   that is. Prefer the alphabetic abbreviation (PDT, AEST); fall back to a compact
+   offset (+10, +5:30) in locales that don't have one. */
+const TZ=(()=>{try{
+  const v=new Intl.DateTimeFormat(undefined,{timeZoneName:'short'})
+    .formatToParts(new Date()).find(x=>x.type==='timeZoneName').value;
+  const m=/^(?:GMT|UTC)([+-].+)$/.exec(v);
+  return (m?m[1]:v).replace(/\s/g,'');
+}catch(e){return'';}})();
+const dayTag=d=>two(d.getDate())+MON[d.getMonth()]+String(d.getFullYear()).slice(-2)
+  +(TZ?'<i class="tz">'+TZ+'</i>':'');
 const stamp=k=>{const d=new Date(k+'T00:00:00Z');
   return DAYS[d.getUTCDay()]+' '+two(d.getUTCDate())+' '+MON[d.getUTCMonth()]+' '+String(d.getUTCFullYear()).slice(-2);};
 /* When the run was saved, in the reader's own timezone. D1 stores created_at as
@@ -1757,22 +1781,18 @@ function stampAt(h){
   let d=raw?new Date(raw):null;
   if((!d||isNaN(d))&&h.t)d=new Date(h.t);
   if(!d||isNaN(d))return stamp(h.d);
-  const hr=d.getHours();
-  return two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
-    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM');
+  return dayTag(d);
 }
 function stampAtUnlimited(h){
   const raw=h.created_at?String(h.created_at).replace(' ','T')+'Z':null;
   let d=raw?new Date(raw):null;
   if((!d||isNaN(d))&&h.t)d=new Date(h.t);
   if(!d||isNaN(d))return stamp(h.d).replace(/^[A-Za-z]{3} /,'');
-  const hr=d.getHours();
-  return two(d.getDate())+' '+MON[d.getMonth()]+' '+String(d.getFullYear()).slice(-2)
-    +' '+(hr%12||12)+':'+two(d.getMinutes())+(hr<12?'AM':'PM');
+  return dayTag(d);
 }
 /* One line on a phone: rank, cat, initials, day, time, cleared, cats, tiles unplayed.
    The CLEAR badge is gone — a red 100% says the same thing in a third of the width. */
-const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span></span>'
+const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span><span>date</span>'
   +'<span>time</span><span>clear</span>'
   +'<span class="hcat">#<span class="ico c f a-cat"></span></span>'
   +'<span class="htls">🧩</span></div>';
@@ -1854,7 +1874,7 @@ function renderBoardFrom(runs){
       .forEach(h=>{const k=who(h);if(!eb[k])eb[k]=h;});
     const r=Object.values(eb).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0)).slice(0,25);
     html+=sec('Unlimited Cat Mode · most cats · top 25');
-    const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span></span>'
+    const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span>date</span>'
       +'<span>time</span>'
       +'<span class="hcat">#<span class="ico c f a-cat"></span></span></div>';
     html+=r.length?UNILBHEAD+r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
