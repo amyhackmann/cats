@@ -230,7 +230,7 @@
   .lbhead .hcat,.lbhead .htls{font-size:10.5px;letter-spacing:0}
   .lbhead .ico{width:13px;height:13px;margin:0 0 0 1px;vertical-align:-2px}
   .lb.note{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
-  .lb.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch auto}
+  .lb.uni{grid-template-columns:2.2ch 3.6ch minmax(0,1fr) 4.6ch 5ch}
   .lb:last-child{border-bottom:0}
   .lb .rk{color:var(--dim);flex:none}
   .lb .ico,.tab .ico,h3.sec .ico{display:inline-block;width:20px;height:20px;position:relative;vertical-align:-5px;margin-right:6px;flex:none}
@@ -1844,7 +1844,10 @@ function renderBoardFrom(runs){
       .forEach(h=>{const k=who(h);if(!eb[k])eb[k]=h;});
     const r=Object.values(eb).sort((a,b)=>b.s-a.s||(a.ms||0)-(b.ms||0)).slice(0,25);
     html+=sec('Unlimited Cat Mode · most cats · top 25');
-    html+=r.length?r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
+    const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span>saved</span>'
+      +'<span>time</span>'
+      +'<span class="hcat">#<span class="ico c f a-cat"></span></span></div>';
+    html+=r.length?UNILBHEAD+r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
       +`<span class="ini">${h.i||''}</span><span class="when">${stampAt(h)}</span>`
       +`<span class="num tm">${h.ms?fmt(h.ms):'—'}</span>`
       +`<span class="pt num">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
