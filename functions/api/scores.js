@@ -99,20 +99,20 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
             ROW_NUMBER() OVER (
               PARTITION BY d
-              ORDER BY b ASC, ms ASC, s DESC
+              ORDER BY b ASC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
             AND d BETWEEN ? AND ?
         )
         SELECT
-          run_id, d, p, b, s, l, x, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
         FROM ranked
         WHERE rn <= CASE WHEN d = ? THEN 10 ELSE 5 END
-        ORDER BY d DESC, b ASC, ms ASC, s DESC
+        ORDER BY d DESC, b ASC, ms ASC, s DESC, tl DESC
       `).bind(start, end, end).all();
 
     } else if (tab === "week") {
@@ -132,20 +132,20 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
-              ORDER BY b ASC, ms ASC, s DESC
+              ORDER BY b ASC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
             AND d BETWEEN ? AND ?
         )
         SELECT
-          run_id, d, p, b, s, l, x, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
         FROM ranked
         WHERE rn = 1
-        ORDER BY b ASC, ms ASC, s DESC
+        ORDER BY b ASC, ms ASC, s DESC, tl DESC
         LIMIT 25
       `).bind(start, end).all();
 
@@ -153,19 +153,19 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
-              ORDER BY b ASC, ms ASC, s DESC
+              ORDER BY b ASC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
           WHERE m = 'daily'
         )
         SELECT
-          run_id, d, p, b, s, l, x, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
         FROM ranked
         WHERE rn = 1
-        ORDER BY b ASC, ms ASC, s DESC
+        ORDER BY b ASC, ms ASC, s DESC, tl DESC
         LIMIT 25
       `).all();
 
@@ -173,7 +173,7 @@ export async function onRequestGet({ request, env }) {
       result = await db.prepare(`
         WITH ranked AS (
           SELECT
-            run_id, d, p, b, s, l, x, ms, i, w, m, pid,
+            run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid,
             ROW_NUMBER() OVER (
               PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
               ORDER BY s DESC, ms ASC
@@ -182,7 +182,7 @@ export async function onRequestGet({ request, env }) {
           WHERE m = 'endless'
         )
         SELECT
-          run_id, d, p, b, s, l, x, ms, i, w, m, pid
+          run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid
         FROM ranked
         WHERE rn = 1
         ORDER BY s DESC, ms ASC
@@ -292,6 +292,15 @@ export async function onRequestPost({ request, env }) {
     const x =
       clampInt(body.x, 0, 10000, 0);
 
+    /*
+     * Unplayed deck cells. Daily only: Unlimited never runs out of pieces.
+     * Ceiling is DECK_SIZE (30) pieces at five cells each, with room to spare.
+     */
+    const tl =
+      mode === "daily"
+        ? clampInt(body.tl, 0, 200, 0)
+        : null;
+
     const ms =
       clampInt(body.ms, 0, 86400000, 0);
 
@@ -346,8 +355,8 @@ export async function onRequestPost({ request, env }) {
 
     await db.prepare(`
       INSERT INTO scores
-        (run_id, d, p, b, s, l, x, ms, i, w, m, pid)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
       ON CONFLICT(run_id) DO UPDATE SET
         d = excluded.d,
@@ -356,6 +365,7 @@ export async function onRequestPost({ request, env }) {
         s = excluded.s,
         l = excluded.l,
         x = excluded.x,
+        tl = excluded.tl,
         ms = excluded.ms,
         i = excluded.i,
         w = excluded.w,
@@ -369,6 +379,7 @@ export async function onRequestPost({ request, env }) {
       s,
       l,
       x,
+      tl,
       ms,
       i,
       w,
