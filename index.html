@@ -1696,7 +1696,7 @@ function syncToday(){                       // AEST day can roll over while the 
   return true;
 }
 const tilesOf=h=>h.tl??-1;                               // rows saved before tl existed rank last on it
-const rankRuns=a=>[...a].sort((x,y)=>leftOf(x)-leftOf(y)||(x.ms||0)-(y.ms||0)||(y.s||0)-(x.s||0)||tilesOf(y)-tilesOf(x));
+const rankRuns=a=>[...a].sort((x,y)=>(y.p??0)-(x.p??0)||(x.ms||0)-(y.ms||0)||(y.s||0)-(x.s||0)||tilesOf(y)-tilesOf(x));
 
 function record(reason){
   syncToday();
