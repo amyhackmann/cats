@@ -134,7 +134,7 @@ export async function onRequestGet({ request, env }) {
           SELECT
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
-              PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
+              PARTITION BY UPPER(i)
               ORDER BY p DESC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
@@ -155,7 +155,7 @@ export async function onRequestGet({ request, env }) {
           SELECT
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
-              PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
+              PARTITION BY UPPER(i)
               ORDER BY p DESC, ms ASC, s DESC, tl DESC
             ) AS rn
           FROM scores
@@ -175,7 +175,7 @@ export async function onRequestGet({ request, env }) {
           SELECT
             run_id, d, p, b, s, l, x, tl, ms, i, w, m, pid, created_at,
             ROW_NUMBER() OVER (
-              PARTITION BY COALESCE(NULLIF(pid, ''), 'i:' || i)
+              PARTITION BY UPPER(i)
               ORDER BY s DESC, ms ASC
             ) AS rn
           FROM scores
@@ -308,41 +308,6 @@ export async function onRequestPost({ request, env }) {
       mode === "daily" && body.w
         ? 1
         : 0;
-
-    /*
-     * ============================================================
-     * LEGACY PID BACKFILL
-     * ============================================================
-     *
-     * pid_backfill holds the 70 run_ids that had no PID as of
-     * 2026-09-08, when the PID build shipped. Players still on a
-     * cached pre-PID build kept saving nulls; when they load a
-     * fresh build and submit, their old runs get claimed so their
-     * history joins up on Weekly / HOF / Endless.
-     *
-     * Only rows in that frozen set are ever touched. Nothing saved
-     * after the table was populated is eligible, and no row that
-     * already has a PID is rewritten.
-     *
-     * When pid_backfill stops shrinking, drop this block and the
-     * table.
-     */
-
-    if (submittedPid) {
-      await db.prepare(`
-        UPDATE scores
-        SET pid = ?
-        WHERE i = ?
-          AND (pid IS NULL OR pid = '')
-          AND run_id IN (
-            SELECT run_id FROM pid_backfill WHERE i = ?
-          )
-      `).bind(
-        submittedPid,
-        i,
-        i
-      ).run();
-    }
 
     /*
      * ============================================================
