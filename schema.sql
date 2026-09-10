@@ -24,7 +24,8 @@ CREATE INDEX IF NOT EXISTS idx_scores_daily_player
 CREATE INDEX IF NOT EXISTS idx_scores_endless_player
   ON scores(m, i, s, ms);
 
--- Dedupe key for Weekly, Hall of Fame and Unlimited: the device's player id,
--- falling back to initials for rows saved before pid existed.
+-- Weekly, Hall of Fame and Unlimited dedupe on UPPER(i) — initials are the
+-- player identity. pid is still written on save but no longer ranks anything;
+-- it is kept for auditing and can be dropped once nothing reads it.
 CREATE INDEX IF NOT EXISTS idx_scores_pid
   ON scores(m, pid, b, ms, s, tl);

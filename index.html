@@ -1521,7 +1521,7 @@ function showFortune(){
 
 /* ---------- storage, initials, scoreboards ---------- */
 const SKEY='blocklab:history',IKEY='blocklab:initials',PKEY='blocklab:pid';
-let playerId='';
+let playerId='';   // still saved with each run for auditing; NOT used to rank or group anyone
 function newPlayerId(){
   try{return crypto.randomUUID();}
   catch(e){return 'p-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);}
@@ -1625,9 +1625,10 @@ function landing(rows,entry,rank,gapOf){
   const tail=merged[24];
   return{on:false,pl:i+1,tail,gap:gapOf(entry,tail)};
 }
-const catGap=(a,b)=>leftOf(a)-leftOf(b);
+const catGap=(a,b)=>pctOf(b)-pctOf(a);   // percentage points behind, matching the board sort
 const scoreGap=(a,b)=>(b.s||0)-(a.s||0);
 const behind=(g,unit)=>g<=0?'level on '+unit+', behind on time':g+' '+unit+(g===1?'':'s')+' behind 25th';
+const behindClear=g=>g<=0?'level on clear %, behind on time':g+' point'+(g===1?'':'s')+' behind 25th';
 
 /* every save gets one line: a win if there is one, an honest standing if not */
 async function celebrate(entry){
@@ -1659,13 +1660,13 @@ async function celebrate(entry){
     else if(W&&W.on&&W.pl===1)msgs.push([4,'Top of the week','Best run anyone has saved since Monday.']);
     else if(W&&W.on&&W.pl<=5)msgs.push([3,ordinal(W.pl)+' this week','On the weekly board.']);
     else if(W&&W.on)msgs.push([2,ordinal(W.pl)+' this week','Top 25 since Monday.']);
-    else if(W)msgs.push([1,'Saved — just outside the weekly top 25',behind(W.gap,'cat')+'. Tomorrow is a fresh board.']);
+    else if(W)msgs.push([1,'Saved — just outside the weekly top 25',behindClear(W.gap)+'. Tomorrow is a fresh board.']);
     const H=landing(hof,entry,rankRuns,catGap);
     if(H&&H.on&&H.held)msgs.push([0,'Saved — your best still stands',ordinal(H.pl)+' all time with '+leftOf(H.best)+' left.']);
     else if(H&&H.on&&H.pl===1)msgs.push([6,'Hall of Fame — first place','The best daily run ever saved.']);
     else if(H&&H.on&&H.pl<=3)msgs.push([5,'Hall of Fame — '+ordinal(H.pl),'Top three of all time.']);
     else if(H&&H.on)msgs.push([3,ordinal(H.pl)+' in the Hall of Fame','Top 25 of all time.']);
-    else if(H)msgs.push([0,'Saved — outside the Hall of Fame top 25',behind(H.gap,'cat')+'. Keep clearing.']);
+    else if(H)msgs.push([0,'Saved — outside the Hall of Fame top 25',behindClear(H.gap)+'. Keep clearing.']);
   }
   if(!msgs.length)msgs.push([0,'Saved','Your run is on the scoreboard.']);
   msgs.sort((a,b)=>b[0]-a[0]);
@@ -1683,7 +1684,8 @@ async function loadHistory(){
 async function saveHistory(){try{await window.storage.set(SKEY,JSON.stringify(history.slice(-500)));}catch(e){}}
 async function saveInitials(){try{await window.storage.set(IKEY,initials);}catch(e){}}
 const dailyRuns=()=>history.filter(h=>h.m==='daily');
-const who=h=>h.pid||('i:'+(h.i||'???').toUpperCase());   // one entry per player, not per set of initials
+const who=h=>'i:'+(h.i||'???').toUpperCase();            // initials ARE the player: one entry per set of initials
+const isMine=h=>!!initials&&(h.i||'').toUpperCase()===initials.toUpperCase();
 const isSaved=h=>h.sv!==0;                               // legacy rows have no sv: count them
 const savedRuns=a=>a.filter(isSaved);
 const pctOf=h=>h.p!==undefined?h.p:(h.w?100:0);
@@ -1696,7 +1698,7 @@ function syncToday(){                       // AEST day can roll over while the 
   return true;
 }
 const tilesOf=h=>h.tl??-1;                               // rows saved before tl existed rank last on it
-const rankRuns=a=>[...a].sort((x,y)=>(y.p??0)-(x.p??0)||(x.ms||0)-(y.ms||0)||(y.s||0)-(x.s||0)||tilesOf(y)-tilesOf(x));
+const rankRuns=a=>[...a].sort((x,y)=>pctOf(y)-pctOf(x)||(x.ms||0)-(y.ms||0)||(y.s||0)-(x.s||0)||tilesOf(y)-tilesOf(x));
 
 function record(reason){
   syncToday();
@@ -1789,7 +1791,7 @@ const LBHEAD='<div class="lbgrid lbhead"><span></span><span></span><span></span>
   +'<span class="htls">🧩</span></div>';
 function rowHTML(rank,_label,h,top){
   const ico=RANKCAT[rank-1]||'a-bear';
-  const mine=playerId&&h.pid===playerId?' mine':'';
+  const mine=isMine(h)?' mine':'';
   const done=leftOf(h)===0?' clear':'';
   return `<div class="lbgrid lb${top?' top':''}${mine}${done}"><span class="rk">${rank}</span><span class="ico c f ${ico}"></span>`
     +`<span class="ini">${h.i||''}</span><span class="when">${stampAt(h)}</span>`
@@ -1817,13 +1819,14 @@ function renderBoard(){
    the server data entirely. Their own best comes from local history instead. */
 function standing(mine,list,label,endless){
   if(!mine)return `<div class="empty">No saved ${label} run yet — one save puts you on the board.</div>`;
-  if(playerId&&list.some(h=>h.pid===playerId))return '';
-  const best=endless?`${(mine.s||0).toLocaleString()} cats`:`${leftOf(mine)} left`;
+  if(list.some(h=>who(h)===who(mine)))return '';
+  const best=endless?`${(mine.s||0).toLocaleString()} cats`:`${pctOf(mine)}% cleared`;
   const tail=list[list.length-1];
   if(!tail)return `<div class="empty">Your best: ${best}. Saved and counted.</div>`;
-  const gap=endless?(tail.s||0)-(mine.s||0):leftOf(mine)-leftOf(tail);
+  const gap=endless?(tail.s||0)-(mine.s||0):pctOf(tail)-pctOf(mine);
   if(gap<=0)return `<div class="empty">Your best: ${best} — right on the edge of the top ${list.length}.</div>`;
-  return `<div class="empty">Your best: ${best} — ${gap} ${gap===1?'cat':'cats'} off the top ${list.length}. So close.</div>`;
+  const unit=endless?(gap===1?'cat':'cats'):(gap===1?'point':'points');
+  return `<div class="empty">Your best: ${best} — ${gap} ${unit} off the top ${list.length}. So close.</div>`;
 }
 const myBest=a=>rankRuns(savedRuns(a))[0];
 
@@ -1868,7 +1871,7 @@ function renderBoardFrom(runs){
     const UNILBHEAD='<div class="lbgrid lbhead uni"><span></span><span></span><span>date</span>'
       +'<span>time</span>'
       +'<span class="hcat">#<span class="ico c f a-cat"></span></span></div>';
-    html+=r.length?UNILBHEAD+r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${playerId&&h.pid===playerId?' mine':''}"><span class="rk">${i+1}</span>`
+    html+=r.length?UNILBHEAD+r.map((h,i)=>`<div class="lbgrid lb uni${i===0?' top':''}${isMine(h)?' mine':''}"><span class="rk">${i+1}</span>`
       +`<span class="ini">${h.i||''}</span><span class="when">${stampAtUnlimited(h)}</span>`
       +`<span class="num tm">${h.ms?fmt(h.ms):'—'}</span>`
       +`<span class="pt num">${(h.s||0).toLocaleString()}</span></div>`).join(''):'<div class="empty">No Unlimited Cat runs yet.</div>';
