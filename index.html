@@ -134,7 +134,6 @@
   .mini.roomy .dp{width:46px;height:46px;border-radius:8px}
   .mini.roomy .piece{gap:1.5px}
   .mini .dp.soon{background:rgba(240,184,64,.22);box-shadow:inset 0 0 0 1px rgba(240,184,64,.6)}
-  .mini .dp.closer{background:rgba(58,46,40,.16)}
   .mini .dp.power{background:rgba(243,198,75,.35);box-shadow:inset 0 0 0 1px #F3C64B}
   .mini .dp.power .c{margin-top:3px}
   .mini .piece{gap:1px}
@@ -417,13 +416,13 @@
     <div class="modehead">Daily Mode</div>
     <p class="goal"><b>Empty the board.</b> Ranked by <b>fewest cats left</b>, then time, then most cats cleared, then most tiles never played.</p>
     <div class="row"><span class="glyph c f a-cat"></span><span><b>Drag</b> pieces from the tray onto the grid.</span></div>
-    <div class="row"><span class="glyph c f a-bear"></span><span><b>Three of a kind</b> touching clear. So does a full row or column.</span></div>
-    <div class="row"><span class="glyph c f a-fox"></span><span><b>Every cat counts</b>, yours too. It ends when the board's empty, the pieces run out, or nothing fits.</span></div>
-    <div class="row"><span class="glyph c f a-orca"></span><span><b>See the whole deck.</b> The last ten pieces are small — plan the finish.</span></div>
+    <div class="row"><span class="glyph c f a-bear"></span><span><b>Three or more of a colour</b> clear when they touch side to side — corners don't count.</span></div>
+    <div class="row"><span class="glyph c f a-cat"></span><span><b>A full row or column</b> clears too. Both can happen on one move, and everything that qualifies leaves together.</span></div>
+    <div class="row"><span class="glyph c f a-fox"></span><span>It ends when the board is empty, daily tiles run out or nothing fits.</span></div>
     <div class="row"><span class="glyphstack"><span class="glyph c f a-bomb"></span><span class="glyph c f a-bolt"></span></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
   </div>
 
-  <div class="row plainrow"><span class="glyphstack"><span class="glyph plain">∞</span><span class="glyph c f a-cat"></span></span><span><b>Unlimited Cat Mode</b> — collect as many cats as you can, until you can't move any more. Top scores are ranked on most cats.</span></div>
+  <div class="row plainrow"><span class="glyphstack"><span class="glyph plain">∞</span><span class="glyph c f a-cat"></span></span><span><b>Unlimited Cat Mode</b> — collect as many cats as you can, until you can't move any more.<br><br>Ranked on <b>most cats</b>, with ties going to the faster run. Nothing else counts here.</span></div>
 
   <button class="cta" id="helpClose">Got it</button>
   <span class="seal">福</span>
@@ -814,11 +813,10 @@ function renderNext(force){
   queue.forEach((p,i)=>{
     const[h,w]=dims(p);
     const box=document.createElement('div');
-    box.className='dp'+(i<3?' soon':'')+(p.tail?' closer':'')+(p.special?' power':'');
+    box.className='dp'+(i<3?' soon':'')+(p.special?' power':'');
     box.appendChild(pieceNode(p,p.special?16:(roomy?7:5),!!p.special));
     row.appendChild(box);
   });
-  const nTail=queue.filter(p=>p.tail).length;
   $('deckCount').textContent=mode==='daily'
     ?`${queue.length} to come, in order`:`next ${queue.length}`;
   $('upNext').style.display=queue.length?'flex':'none';
@@ -1032,29 +1030,29 @@ function findGroups(){
 }
 function bump(){if(!comboBumped){combo++;comboBumped=true;if(combo>=2)setTimeout(()=>popText('Streak ×'+combo),260);}return Math.min(1+(combo-1)*0.5,4);}
 
+/* lines and colour groups are BOTH read off the same board, before anything is
+   removed, then leave together. Clearing the line first would strand any part of
+   a group that was only a group because the line was still there. */
 function resolve(gained,r0,c0){
   const{rows,cols}=fullLines(),total=rows.length+cols.length;
-  if(!total)return groupPass(gained,r0,c0,0,false);
-  bump();const kill=new Set();
+  const groups=findGroups();
+  if(!total&&!groups.length)return settle(gained,r0,c0,0,false,0);
+  bump();
+  const lineKill=new Set(),groupKill=new Set();
   const scoreLine=list=>list.forEach(ci=>{
     gained+=ci.length;
-    ci.forEach(i=>kill.add(i));
+    ci.forEach(i=>lineKill.add(i));
   });
   scoreLine(rows.map(r=>[...Array(N)].map((_,c)=>idx(r,c))));
   scoreLine(cols.map(c=>[...Array(N)].map((_,r)=>idx(r,c))));
-  lines+=total;charge+=kill.size;
-  buzz([12,26,12]);
-  cascade(kill,()=>groupPass(gained,r0,c0,total,true));
-}
-function groupPass(gained,r0,c0,total,cleared){
-  const groups=findGroups();
-  if(!groups.length)return settle(gained,r0,c0,total,cleared,0);
-  bump();const kill=new Set();
   let biggest=0;
-  groups.forEach(g=>{biggest=Math.max(biggest,g.length);gained+=g.length;g.forEach(i=>kill.add(i));});
-  matched+=kill.size;charge+=kill.size;
+  groups.forEach(g=>{
+    biggest=Math.max(biggest,g.length);
+    g.forEach(i=>{if(!lineKill.has(i)){gained++;groupKill.add(i);}});   // a tile in both scores once
+  });
+  lines+=total;matched+=groupKill.size;charge+=lineKill.size+groupKill.size;
   buzz([12,26,12]);
-  cascade(kill,()=>settle(gained,r0,c0,total,true,biggest));
+  cascade(new Set([...lineKill,...groupKill]),()=>settle(gained,r0,c0,total,true,biggest));
 }
 function settle(gained,r0,c0,total,cleared,biggest){
   if(!cleared){combo=0;melodyPos=0;}          // a placement that clears nothing ends the tune
@@ -1247,15 +1245,14 @@ function buildDaily(k){
   return out;
 }
 const seedsIn=b=>{let n=0;for(const v of b)if(v&&v.seed)n++;return n;};
-function simResolve(b){                       // same two passes the real board runs
+function simResolve(b){                       // same single pass the real board runs
   const saved=board;board=b;
   const{rows,cols}=fullLines(),kill=new Set();
   rows.forEach(r=>{for(let c=0;c<N;c++)kill.add(idx(r,c))});cols.forEach(c=>{for(let r=0;r<N;r++)kill.add(idx(r,c))});
+  findGroups().forEach(g=>g.forEach(i=>kill.add(i)));   // read before any removal, same as resolve()
   kill.forEach(i=>b[i]=null);
-  const k2=new Set();findGroups().forEach(g=>g.forEach(i=>k2.add(i)));
-  k2.forEach(i=>b[i]=null);
   board=saved;
-  return kill.size+k2.size;
+  return kill.size;
 }
 function simFits(b,p,r0,c0){
   if(p.special){
