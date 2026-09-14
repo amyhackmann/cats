@@ -185,7 +185,7 @@
     font-family:'LS Display','Fredoka',system-ui,sans-serif;font-weight:600;font-size:14px;color:var(--red);letter-spacing:.01em}
   .card .mode .goal{margin:2px 0 10px}
   .card.rules .plainrow{margin:0 2px 4px}
-  .card.rules .row{margin-bottom:5px;font-size:13.5px;line-height:1.4}
+  .card.rules .row{display:grid;grid-template-columns:26px minmax(0,1fr);align-items:start;margin-bottom:5px;font-size:13.5px;line-height:1.4}
   .card.rules .glyph{width:26px;height:30px}
   .card.rules p.goal{margin:0 0 8px;padding:7px 10px;font-size:14.5px}
   .card p.goal{color:var(--text);font-size:15.5px;background:rgba(245,190,70,.18);border-radius:12px;padding:10px 12px}
@@ -419,15 +419,15 @@
     <div class="modehead">Daily Mode</div>
     <p class="goal"><b>Empty the board.</b> Ranked by <b>fewest cats left</b>, then time, then most cats cleared, then most tiles never played.</p>
     <div class="row"><span class="glyph c f a-cat"></span><span><b>Drag</b> pieces from the tray onto the grid.</span></div>
-    <div class="row"><span class="glyphstack"><span class="glyph c f a-bear"></span><span class="glyph c f a-cat"></span></span><span><b>Three or more of a colour</b> clear when they touch side to side — corners don't count. <b>A full row or column</b> clears too, and both can happen on one move.</span></div>
+    <div class="row"><span class="glyph c f a-bear"></span><span><b>Three or more of a colour</b> clear when they touch side to side — corners don't count. <b>A full row or column</b> clears too, and both can happen on one move.</span></div>
     <div class="row"><span class="glyph c f a-fox"></span><span>It ends when the board is empty, daily tiles run out or nothing fits.</span></div>
-    <div class="row"><span class="glyphstack"><span class="glyph c f a-bomb"></span><span class="glyph c f a-bolt"></span></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
+    <div class="row"><span class="glyph c f a-bomb"></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
   </div>
 
   <div class="mode">
     <div class="modehead">Unlimited Cat Mode</div>
     <p class="goal"><b>Collect as many cats as you can.</b> Ranked by <b>most cats</b>, with ties going to the faster run.</p>
-    <div class="row"><span class="glyphstack"><span class="glyph plain">∞</span><span class="glyph c f a-cat"></span></span><span>The cats never run out. It ends when nothing fits.</span></div>
+    <div class="row"><span class="glyph plain">∞</span><span>The cats never run out. It ends when nothing fits.</span></div>
   </div>
 
   <button class="cta" id="helpClose">Got it</button>
