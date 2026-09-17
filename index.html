@@ -196,7 +196,9 @@
   .glyph.plain{background:var(--empty)!important;height:30px}
   .glyphstack{display:flex;flex-direction:row;align-items:center;gap:4px;flex:none}
   .glyphstack .glyph{margin:0}
-  .card.rules .glyphstack{gap:3px}
+  .card.rules .glyphstack{flex-direction:column;gap:3px;width:26px}
+  .card.rules .glyphbadge{position:relative;width:26px;flex:none}
+  .card.rules .glyphbadge .inf{position:absolute;right:-7px;bottom:-3px;min-width:15px;height:15px;padding:0 2px;border-radius:8px;background:var(--red);color:#fff;font-size:12px;font-weight:800;line-height:15px;text-align:center;box-shadow:0 0 0 1.5px var(--card)}
   .cta{width:100%;margin-top:10px;padding:15px;border-radius:16px;border:0;cursor:pointer;background:var(--amber);
     color:#3A2E28;font-family:'LS Display','Fredoka',system-ui,sans-serif;font-weight:600;font-size:17px}
   .cta.ghost{background:transparent;border:1px solid var(--edge);color:var(--text)}
@@ -421,13 +423,13 @@
     <div class="row"><span class="glyph c f a-cat"></span><span><b>Drag</b> pieces from the tray onto the grid.</span></div>
     <div class="row"><span class="glyph c f a-bear"></span><span><b>Three or more of a colour</b> clear when they touch side to side — corners don't count. <b>A full row or column</b> clears too, and both can happen on one move.</span></div>
     <div class="row"><span class="glyph c f a-fox"></span><span>It ends when the board is empty, daily tiles run out or nothing fits.</span></div>
-    <div class="row"><span class="glyph c f a-bomb"></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
+    <div class="row"><span class="glyphstack"><span class="glyph c f a-bomb"></span><span class="glyph c f a-bolt"></span></span><span><b>Every 30 cats cleared</b> adds a fortune cookie (clears 3×3) or a red packet (clears its row and column) to your deck. Drag it anywhere, even on top of cats.</span></div>
   </div>
 
   <div class="mode">
     <div class="modehead">Unlimited Cat Mode</div>
     <p class="goal"><b>Collect as many cats as you can.</b> Ranked by <b>most cats</b>, with ties going to the faster run.</p>
-    <div class="row"><span class="glyph plain">∞</span><span>The cats never run out. It ends when nothing fits.</span></div>
+    <div class="row"><span class="glyphbadge"><span class="glyph c f a-orca"></span><span class="inf" aria-hidden="true">∞</span></span><span>The cats never run out. It ends when nothing fits.</span></div>
   </div>
 
   <button class="cta" id="helpClose">Got it</button>
